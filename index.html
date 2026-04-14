@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+=<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
@@ -4265,6 +4265,26 @@ function hv2SaveRecord() {
   if (APPS_SCRIPT_URL) {
     _api('saveRecord', rec).catch(function(){});
   }
+  // 從輸出文字抽取短中長期目標，同步更新個案資料
+  (function() {
+    var cIdx = cases.findIndex(function(x){ return x.id===caseId; });
+    if (cIdx < 0) return;
+    var extractGoal = function(label) {
+      var m = text.match(new RegExp(label + '[：:]\\s*([^\\n]{5,150})'));
+      return m ? m[1].trim() : '';
+    };
+    var sg = extractGoal('[1１一][\.．]?\\s*短期目標');
+    var mg = extractGoal('[2２二][\.．]?\\s*中期目標');
+    var lg = extractGoal('[3３三][\.．]?\\s*長期目標');
+    if (sg) cases[cIdx].shortGoal = sg;
+    if (mg) cases[cIdx].midGoal   = mg;
+    if (lg) cases[cIdx].longGoal  = lg;
+    if (sg || mg || lg) {
+      cases[cIdx].goalUpdated = new Date().toISOString().substring(0,10);
+      saveData('cases', cases);
+      if (APPS_SCRIPT_URL) { _api('saveCase', cases[cIdx]).catch(function(){}); }
+    }
+  })();
   alert('✅ 已儲存家訪記錄');
   // 清除表單
   hv2Init();
