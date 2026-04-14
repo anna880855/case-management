@@ -320,7 +320,7 @@
       <div class="nav-item" onclick="showPage('homevisit')" id="nav-homevisit">
         <span class="icon">🏡</span><span class="nav-label"> 家訪</span>記錄產生器
       </div>
-      <div class="nav-item" onclick="openSettings()" id="nav-settings">
+      <div class="nav-item" onclick="showPage('settings')" id="nav-settings">
         <span class="icon">⚙️</span><span class="nav-label"> 系統設定</span>
       </div>
       <div class="nav-item" onclick="showPage('referral')" id="nav-referral">
@@ -1792,18 +1792,6 @@ function toggleSidebar() {
 
 var _lastPage = '';
 
-function openSettings() {
-  var w = window.open('settings.html', 'settings', 'width=700,height=750,scrollbars=yes');
-  // 接收設定更新
-  window.addEventListener('message', function(e) {
-    if (e.data && e.data.type === 'settings-saved') {
-      localStorage.setItem('sys_config', JSON.stringify(e.data.cfg));
-      // 更新全域 APPS_SCRIPT_URL
-      APPS_SCRIPT_URL = e.data.cfg.appsScriptUrl || APPS_SCRIPT_URL;
-    }
-  }, { once: true });
-}
-
 function showPage(page) {
   ['dashboard','generator','records','sentences','homevisit','settings','referral'].forEach(function(p) {
     var pg = document.getElementById('page-'+p);
@@ -1818,11 +1806,11 @@ function showPage(page) {
   // 每次都更新 dashboard/records；其他頁面只在切換時初始化
   if (page === 'dashboard') renderDashboard();
   else if (page === 'records') renderRecords();
+  else if (page === 'settings') settingsInit();
   else if (page !== _lastPage) {
     if (page === 'generator') initGenerator();
     if (page === 'sentences') renderSentences();
     if (page === 'homevisit') hv2Init();
-    if (page === 'settings') settingsInit();
     if (page === 'referral') referralInit();
   }
   _lastPage = page;
