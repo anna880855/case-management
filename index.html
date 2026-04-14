@@ -337,7 +337,7 @@
         🔑 設定 API Key
       </button>
       <button type="button" onclick="forceSyncFromCloud()" style="width:100%;margin-bottom:6px;padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.12);color:#fff;cursor:pointer;font-size:11px;font-family:inherit">☁️ 強制同步雲端</button>
-      <div id="api-key-status" style="font-size:10px;margin-top:5px;opacity:0.7"></div>
+      <div id="s-api-key-status" style="font-size:10px;margin-top:5px;opacity:0.7"></div>
     </div>
   </div>
 
@@ -1165,18 +1165,7 @@
 </div>
 
 
-    <!-- PAGE: REFERRAL -->
-    <div id="page-referral" class="hidden">
-      <div class="topbar">
-        <div><h2>📋 其他服務轉介單</h2><div class="topbar-sub">填寫後點「列印/儲存PDF」輸出</div></div>
-        <div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap;">
-          <select id="ref-case-select" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;min-width:200px;" onchange="referralLoadCase()">
-            <option value="">— 選擇個案帶入 —</option>
-          </select>
-          <button type="button" class="btn btn-secondary" onclick="referralClear()">🔄 清除</button>
-          <button type="button" class="btn btn-primary" onclick="referralPrint()">🖨️ 列印 / 儲存 PDF</button>
-        </div>
-      </div>
+    
       <div class="content" id="referral-content" style="background:#f5f3ee;">
         <div style="max-width:760px;margin:0 auto;background:#fff;padding:30px 40px;box-shadow:0 2px 20px rgba(0,0,0,.1);">
 
@@ -1191,10 +1180,10 @@
           <table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px;">
             <tr>
               <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;width:80px;white-space:nowrap;">姓名</td>
-              <td style="border:1px solid #000;padding:4px 8px;"><input id="rf-name" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="請輸入姓名"></td>
+              <td style="border:1px solid #000;padding:4px 8px;"><input id="rp-name" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="請輸入姓名"></td>
               <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;width:70px;white-space:nowrap;">出生日期</td>
               <td style="border:1px solid #000;padding:4px 8px;white-space:nowrap;">
-                民國&nbsp;<input id="rf-by" type="text" style="border:none;outline:none;width:34px;font-size:13px;font-family:inherit;" placeholder="年">&nbsp;年&nbsp;<input id="rf-bm" type="text" style="border:none;outline:none;width:26px;font-size:13px;font-family:inherit;" placeholder="月">&nbsp;月&nbsp;<input id="rf-bd" type="text" style="border:none;outline:none;width:26px;font-size:13px;font-family:inherit;" placeholder="日">&nbsp;日
+                民國&nbsp;<input id="rp-by" type="text" style="border:none;outline:none;width:34px;font-size:13px;font-family:inherit;" placeholder="年">&nbsp;年&nbsp;<input id="rp-bm" type="text" style="border:none;outline:none;width:26px;font-size:13px;font-family:inherit;" placeholder="月">&nbsp;月&nbsp;<input id="rp-bd" type="text" style="border:none;outline:none;width:26px;font-size:13px;font-family:inherit;" placeholder="日">&nbsp;日
               </td>
             </tr>
             <tr>
@@ -1204,64 +1193,64 @@
                 <label style="cursor:pointer;font-size:13px;"><input type="radio" name="rf-gender" value="女" style="margin-right:4px;">女</label>
               </td>
               <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">身份證字號</td>
-              <td style="border:1px solid #000;padding:4px 8px;"><input id="rf-idno" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="A123456789"></td>
+              <td style="border:1px solid #000;padding:4px 8px;"><input id="rp-idno" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="A123456789"></td>
             </tr>
             <tr>
               <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">居住地址</td>
-              <td colspan="3" style="border:1px solid #000;padding:4px 8px;"><input id="rf-address" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="請輸入地址"></td>
+              <td colspan="3" style="border:1px solid #000;padding:4px 8px;"><input id="rp-address" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="請輸入地址"></td>
             </tr>
             <tr>
               <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">主要聯絡人</td>
-              <td style="border:1px solid #000;padding:4px 8px;"><input id="rf-contact" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="姓名"></td>
+              <td style="border:1px solid #000;padding:4px 8px;"><input id="rp-contact" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="姓名"></td>
               <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">關係</td>
-              <td style="border:1px solid #000;padding:4px 8px;"><input id="rf-relation" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="如：子、女、配偶"></td>
+              <td style="border:1px solid #000;padding:4px 8px;"><input id="rp-relation" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="如：子、女、配偶"></td>
             </tr>
             <tr>
               <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">聯絡電話</td>
               <td colspan="3" style="border:1px solid #000;padding:6px 8px;">
                 <div style="display:flex;gap:16px;margin-bottom:5px;">
-                  <label style="cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rf-phone-self">本人</label>
-                  <label style="cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rf-phone-contact">主要聯絡人</label>
+                  <label style="cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rp-phone-self">本人</label>
+                  <label style="cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rp-phone-contact">主要聯絡人</label>
                 </div>
-                <input id="rf-phone" type="text" style="border:none;border-bottom:1px solid #ccc;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="電話號碼">
+                <input id="rp-phone" type="text" style="border:none;border-bottom:1px solid #ccc;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="電話號碼">
               </td>
             </tr>
             <tr>
               <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">轉介類型</td>
               <td colspan="3" style="border:1px solid #000;padding:8px;">
                 <div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:6px;font-size:13px;">
-                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rf-t1">醫事/社照 C 據點</label>
-                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rf-t2">失智據點</label>
-                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rf-t3">失智共照中心</label>
-                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rf-t4">到宅牙醫</label>
-                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rf-t5">其他</label>
+                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rp-t1">醫事/社照 C 據點</label>
+                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rp-t2">失智據點</label>
+                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rp-t3">失智共照中心</label>
+                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rp-t4">到宅牙醫</label>
+                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rp-t5">其他</label>
                 </div>
-                <input id="rf-type-other" type="text" style="border:none;border-bottom:1px solid #ccc;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="其他類型說明…">
+                <input id="rp-type-other" type="text" style="border:none;border-bottom:1px solid #ccc;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="其他類型說明…">
               </td>
             </tr>
             <tr>
               <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">收案單位</td>
-              <td colspan="3" style="border:1px solid #000;padding:4px 8px;"><input id="rf-unit" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="請填寫收案單位名稱"></td>
+              <td colspan="3" style="border:1px solid #000;padding:4px 8px;"><input id="rp-unit" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="請填寫收案單位名稱"></td>
             </tr>
             <tr>
               <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;vertical-align:top;padding-top:10px;">個案概況</td>
               <td colspan="3" style="border:1px solid #000;padding:8px;">
                 <div style="font-size:12px;color:#666;margin-bottom:4px;">近三個月個案之身心、家庭概況：</div>
-                <textarea id="rf-summary" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;resize:vertical;min-height:90px;line-height:1.8;" placeholder="請描述個案近三個月身心、家庭概況…"></textarea>
+                <textarea id="rp-summary" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;resize:vertical;min-height:90px;line-height:1.8;" placeholder="請描述個案近三個月身心、家庭概況…"></textarea>
               </td>
             </tr>
             <tr>
               <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;white-space:nowrap;">個管核章/日期</td>
-              <td style="border:1px solid #000;padding:4px 8px;"><input id="rf-cm-sign" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="個管師簽名 / 日期"></td>
+              <td style="border:1px solid #000;padding:4px 8px;"><input id="rp-cm-sign" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="個管師簽名 / 日期"></td>
               <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;white-space:nowrap;">主管核章/日期</td>
-              <td style="border:1px solid #000;padding:4px 8px;"><input id="rf-mgr-sign" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="主管簽名 / 日期"></td>
+              <td style="border:1px solid #000;padding:4px 8px;"><input id="rp-mgr-sign" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="主管簽名 / 日期"></td>
             </tr>
           </table>
 
           <!-- 機構資訊 -->
           <div style="border:1px solid #000;padding:10px 14px;margin-bottom:20px;font-size:13px;line-height:2;">
             <div>・<strong>轉介單位：</strong>齡活有限公司附設新北市私立齡活居家長照機構</div>
-            <div>・<strong>聯絡電話：</strong><input id="rf-org-phone" type="text" style="border:none;border-bottom:1px solid #ccc;outline:none;font-size:13px;font-family:inherit;width:160px;" placeholder="機構電話"></div>
+            <div>・<strong>聯絡電話：</strong><input id="rp-org-phone" type="text" style="border:none;border-bottom:1px solid #ccc;outline:none;font-size:13px;font-family:inherit;width:160px;" placeholder="機構電話"></div>
             <div>・<strong>傳真號碼：</strong>02-89650321（若需傳真，傳真前請先致電，謝謝您）</div>
           </div>
 
@@ -1272,22 +1261,22 @@
               <tr>
                 <td style="border:1px solid #000;padding:10px 12px;width:70px;font-weight:600;vertical-align:top;">單位回覆：</td>
                 <td style="border:1px solid #000;padding:10px 12px;">
-                  <label style="display:block;margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="rf-r1" style="margin-right:6px;">提供服務</label>
+                  <label style="display:block;margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="rp-r1" style="margin-right:6px;">提供服務</label>
                   <div style="display:flex;align-items:center;gap:8px;">
-                    <label style="cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;"><input type="checkbox" id="rf-r2">無法提供服務，原因：</label>
-                    <input id="rf-reply-reason" type="text" style="border:none;border-bottom:1px solid #ccc;outline:none;flex:1;font-size:13px;font-family:inherit;" placeholder="請填寫原因">
+                    <label style="cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;"><input type="checkbox" id="rp-r2">無法提供服務，原因：</label>
+                    <input id="rp-reply-reason" type="text" style="border:none;border-bottom:1px solid #ccc;outline:none;flex:1;font-size:13px;font-family:inherit;" placeholder="請填寫原因">
                   </div>
                 </td>
               </tr>
               <tr>
                 <td style="border:1px solid #000;padding:10px 12px;font-weight:600;vertical-align:top;">處理情形：</td>
                 <td style="border:1px solid #000;padding:8px 12px;">
-                  <textarea id="rf-reply-detail" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;" placeholder="請填寫處理情形"></textarea>
+                  <textarea id="rp-reply-detail" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;" placeholder="請填寫處理情形"></textarea>
                 </td>
               </tr>
               <tr>
                 <td style="border:1px solid #000;padding:12px;text-align:center;font-weight:600;">收案人員</td>
-                <td style="border:1px solid #000;padding:8px 12px;"><input id="rf-caseworker" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="收案人員姓名"></td>
+                <td style="border:1px solid #000;padding:8px 12px;"><input id="rp-caseworker" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="收案人員姓名"></td>
               </tr>
             </table>
           </div>
@@ -1606,7 +1595,7 @@ function promptApiKey() {
   updateApiKeyStatus();
 }
 function updateApiKeyStatus() {
-  var el = document.getElementById('api-key-status');
+  var el = document.getElementById('s-api-key-status') || document.getElementById('api-key-status');
   if (!el) return;
   el.textContent = getApiKey() ? '✅ API Key 已設定' : '⚠️ 尚未設定';
 }
