@@ -974,11 +974,61 @@
       <div class="topbar">
         <div><h2>⚙️ 系統設定</h2><div class="topbar-sub">個管師資訊、AI 設定、主題顏色</div></div>
       </div>
-      <div class="content" style="padding:0">
-        <iframe id="settings-iframe" src="settings.html"
-          style="width:100%;height:100%;border:none;flex:1;min-height:0"
-          onload="syncSettingsTheme()">
-        </iframe>
+      <div class="content">
+        <div style="max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:20px">
+
+          <!-- 個管師資訊 -->
+          <div class="panel">
+            <div class="panel-header">👤 個管師資訊</div>
+            <div class="panel-body" style="display:flex;flex-direction:column;gap:14px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div class="form-group"><label>個管師姓名</label><input type="text" id="s-worker-name" placeholder="林侑萱"></div>
+                <div class="form-group"><label>個管師電話</label><input type="text" id="s-worker-phone" placeholder="0902692567"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div class="form-group"><label>所屬機構</label><input type="text" id="s-org-name" placeholder="長照機構名稱"></div>
+                <div class="form-group"><label>服務區域</label><input type="text" id="s-region" placeholder="如：台北市大安區"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI 設定 -->
+          <div class="panel">
+            <div class="panel-header">🤖 AI 設定（Anthropic API）</div>
+            <div class="panel-body" style="display:flex;flex-direction:column;gap:14px">
+              <div class="form-group">
+                <label>Anthropic API Key</label>
+                <input type="password" id="s-api-key" placeholder="sk-ant-api03-...">
+                <div style="font-size:12px;margin-top:4px" id="api-key-status"></div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <button type="button" class="btn btn-secondary" onclick="testApiKey()">🔌 測試連線</button>
+                <span id="s-api-status" style="font-size:12.5px;color:var(--text3)"></span>
+              </div>
+              <hr style="border:none;border-top:1px solid var(--border)">
+              <div class="form-group">
+                <label>Google Apps Script URL（雲端同步）</label>
+                <input type="text" id="s-apps-script-url" placeholder="https://script.google.com/macros/s/...">
+                <div style="font-size:11.5px;color:var(--text3);margin-top:3px">用於與 Google 試算表雙向同步個案資料</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 主題顏色 -->
+          <div class="panel">
+            <div class="panel-header">🎨 主題顏色</div>
+            <div class="panel-body">
+              <div id="theme-color-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px"></div>
+            </div>
+          </div>
+
+          <!-- 儲存 -->
+          <div style="display:flex;gap:10px;align-items:center">
+            <button type="button" class="btn btn-primary" onclick="saveSettings()">💾 儲存設定</button>
+            <span id="settings-save-ok" style="font-size:12.5px;color:var(--accent);display:none">✅ 已儲存</span>
+          </div>
+
+        </div>
       </div>
     </div>
       <div class="content">
@@ -1800,7 +1850,7 @@ function showPage(page) {
     if (page === 'generator') initGenerator();
     if (page === 'sentences') renderSentences();
     if (page === 'homevisit') hv2Init();
-    if (page === 'settings') { var f=document.getElementById('settings-iframe'); if(f&&f.contentWindow) try{f.contentWindow.initSettings();}catch(e){} }
+    if (page === 'settings') settingsInit();
     if (page === 'referral') referralInit();
   }
   _lastPage = page;
@@ -5620,13 +5670,10 @@ function saveSettings() {
   var _uInp=document.getElementById('s-apps-script-url');if(_uInp&&_uInp.value.trim()){APPS_SCRIPT_URL=_uInp.value.trim();localStorage.setItem('apps_script_url',APPS_SCRIPT_URL);}
   var key = document.getElementById('s-api-key').value.trim();
   if (key) localStorage.setItem('anthropic_api_key', key);
-  // apply worker name to home visit fields
-  var hn = document.getElementById('hv-worker-name');
-  var hp = document.getElementById('hv-worker-phone');
-  if (hn && cfg.workerName)  hn.value = cfg.workerName;
-  if (hp && cfg.workerPhone) hp.value = cfg.workerPhone;
+
   updateApiKeyStatus();
-  alert('✅ 設定已儲存');
+  var st = document.getElementById('settings-save-ok');
+  if (st) { st.style.display = 'inline'; setTimeout(function(){ st.style.display = 'none'; }, 2500); }
 }
 
 function getSysConfig() {
