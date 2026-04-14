@@ -1781,34 +1781,6 @@ var currentSentenceTab = 'service';
 
 // ========== PAGE NAV ==========
 
-
-function syncSettingsTheme() {
-  // 把目前主題傳給 settings iframe
-  var cfg = loadData('sys_config', {});
-  var iframe = document.getElementById('settings-iframe');
-  if (iframe && iframe.contentWindow && cfg.themeAccent) {
-    try {
-      iframe.contentWindow.postMessage({ type:'applyTheme', accent:cfg.themeAccent, accent2:cfg.themeAccent2 }, '*');
-    } catch(e) {}
-  }
-}
-
-// 接收 settings.html 傳回的訊息
-window.addEventListener('message', function(e) {
-  if (!e.data || !e.data.type) return;
-  if (e.data.type === 'applyTheme') {
-    applyTheme(e.data.accent, e.data.accent2);
-  }
-  if (e.data.type === 'settingsSaved') {
-    var cfg = e.data.config;
-    if (cfg) {
-      // 同步雲端 URL
-      var url = localStorage.getItem('apps_script_url');
-      if (url) APPS_SCRIPT_URL = url;
-    }
-  }
-});
-
 function toggleSidebar() {
   var sb  = document.getElementById('app-sidebar');
   var btn = document.getElementById('sidebar-toggle-btn');
