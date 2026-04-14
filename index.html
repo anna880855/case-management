@@ -308,9 +308,6 @@
       <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
         <span class="icon">🏠</span><span class="nav-label"> 總覽</span>
       </div>
-      <div class="nav-item" onclick="showPage('generator')" id="nav-generator">
-        <span class="icon">📞</span><span class="nav-label"> 電訪紀錄產生器</span>
-      </div>
       <div class="nav-item" onclick="showPage('records')" id="nav-records">
         <span class="icon">📋</span><span class="nav-label"> 聯繫紀錄</span>
       </div>
@@ -951,24 +948,6 @@
   </div>
 </div>
 
-
-    
-
-    <!-- PAGE: REFERRAL -->
-    <div id="page-referral" class="page hidden">
-      <div class="topbar" style="flex-shrink:0;">
-        <div>
-          <h2>📋 其他服務轉介單</h2>
-          <div class="topbar-sub">填寫完成後點「產生轉介單文字」複製使用</div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap;">
-          <select id="ref-case-select" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;min-width:200px;" onchange="referralLoadCase()">
-            <option value="">— 選擇個案帶入 —</option>
-          </select>
-          <button type="button" class="btn btn-secondary" onclick="referralClear()">🔄 清除</button>
-          <button type="button" class="btn btn-primary" onclick="referralGenerate()">📄 產生轉介單文字</button>
-        </div>
-      </div>
     <!-- PAGE: SETTINGS -->
     <div id="page-settings" class="page">
       <div class="topbar">
@@ -1164,126 +1143,6 @@
   </div>
 </div>
 
-
-    
-      <div class="content" id="referral-content" style="background:#f5f3ee;">
-        <div style="max-width:760px;margin:0 auto;background:#fff;padding:30px 40px;box-shadow:0 2px 20px rgba(0,0,0,.1);">
-
-          <!-- 標題 -->
-          <div style="text-align:center;margin-bottom:20px;">
-            <div style="font-size:11px;color:#888;text-align:right;margin-bottom:4px;">第一版 1130507 訂</div>
-            <div style="font-size:20px;font-weight:700;color:var(--accent);letter-spacing:2px;margin-bottom:6px;">齡活居家長照機構</div>
-            <h2 style="font-size:22px;font-weight:700;letter-spacing:4px;border-bottom:2px solid #000;padding-bottom:8px;">其他服務轉介單</h2>
-          </div>
-
-          <!-- 主表格 -->
-          <table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px;">
-            <tr>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;width:80px;white-space:nowrap;">姓名</td>
-              <td style="border:1px solid #000;padding:4px 8px;"><input id="rp-name" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="請輸入姓名"></td>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;width:70px;white-space:nowrap;">出生日期</td>
-              <td style="border:1px solid #000;padding:4px 8px;white-space:nowrap;">
-                民國&nbsp;<input id="rp-by" type="text" style="border:none;outline:none;width:34px;font-size:13px;font-family:inherit;" placeholder="年">&nbsp;年&nbsp;<input id="rp-bm" type="text" style="border:none;outline:none;width:26px;font-size:13px;font-family:inherit;" placeholder="月">&nbsp;月&nbsp;<input id="rp-bd" type="text" style="border:none;outline:none;width:26px;font-size:13px;font-family:inherit;" placeholder="日">&nbsp;日
-              </td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">性別</td>
-              <td style="border:1px solid #000;padding:6px 8px;">
-                <label style="margin-right:16px;cursor:pointer;font-size:13px;"><input type="radio" name="rf-gender" value="男" style="margin-right:4px;">男</label>
-                <label style="cursor:pointer;font-size:13px;"><input type="radio" name="rf-gender" value="女" style="margin-right:4px;">女</label>
-              </td>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">身份證字號</td>
-              <td style="border:1px solid #000;padding:4px 8px;"><input id="rp-idno" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="A123456789"></td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">居住地址</td>
-              <td colspan="3" style="border:1px solid #000;padding:4px 8px;"><input id="rp-address" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="請輸入地址"></td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">主要聯絡人</td>
-              <td style="border:1px solid #000;padding:4px 8px;"><input id="rp-contact" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="姓名"></td>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">關係</td>
-              <td style="border:1px solid #000;padding:4px 8px;"><input id="rp-relation" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="如：子、女、配偶"></td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">聯絡電話</td>
-              <td colspan="3" style="border:1px solid #000;padding:6px 8px;">
-                <div style="display:flex;gap:16px;margin-bottom:5px;">
-                  <label style="cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rp-phone-self">本人</label>
-                  <label style="cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rp-phone-contact">主要聯絡人</label>
-                </div>
-                <input id="rp-phone" type="text" style="border:none;border-bottom:1px solid #ccc;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="電話號碼">
-              </td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">轉介類型</td>
-              <td colspan="3" style="border:1px solid #000;padding:8px;">
-                <div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:6px;font-size:13px;">
-                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rp-t1">醫事/社照 C 據點</label>
-                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rp-t2">失智據點</label>
-                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rp-t3">失智共照中心</label>
-                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rp-t4">到宅牙醫</label>
-                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rp-t5">其他</label>
-                </div>
-                <input id="rp-type-other" type="text" style="border:none;border-bottom:1px solid #ccc;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="其他類型說明…">
-              </td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">收案單位</td>
-              <td colspan="3" style="border:1px solid #000;padding:4px 8px;"><input id="rp-unit" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="請填寫收案單位名稱"></td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;vertical-align:top;padding-top:10px;">個案概況</td>
-              <td colspan="3" style="border:1px solid #000;padding:8px;">
-                <div style="font-size:12px;color:#666;margin-bottom:4px;">近三個月個案之身心、家庭概況：</div>
-                <textarea id="rp-summary" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;resize:vertical;min-height:90px;line-height:1.8;" placeholder="請描述個案近三個月身心、家庭概況…"></textarea>
-              </td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;white-space:nowrap;">個管核章/日期</td>
-              <td style="border:1px solid #000;padding:4px 8px;"><input id="rp-cm-sign" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="個管師簽名 / 日期"></td>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;white-space:nowrap;">主管核章/日期</td>
-              <td style="border:1px solid #000;padding:4px 8px;"><input id="rp-mgr-sign" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="主管簽名 / 日期"></td>
-            </tr>
-          </table>
-
-          <!-- 機構資訊 -->
-          <div style="border:1px solid #000;padding:10px 14px;margin-bottom:20px;font-size:13px;line-height:2;">
-            <div>・<strong>轉介單位：</strong>齡活有限公司附設新北市私立齡活居家長照機構</div>
-            <div>・<strong>聯絡電話：</strong><input id="rp-org-phone" type="text" style="border:none;border-bottom:1px solid #ccc;outline:none;font-size:13px;font-family:inherit;width:160px;" placeholder="機構電話"></div>
-            <div>・<strong>傳真號碼：</strong>02-89650321（若需傳真，傳真前請先致電，謝謝您）</div>
-          </div>
-
-          <!-- 回覆單 -->
-          <div style="border-top:3px double #000;padding-top:20px;">
-            <h3 style="text-align:center;font-size:20px;font-weight:700;letter-spacing:4px;margin-bottom:14px;">回覆單</h3>
-            <table style="width:100%;border-collapse:collapse;font-size:13px;">
-              <tr>
-                <td style="border:1px solid #000;padding:10px 12px;width:70px;font-weight:600;vertical-align:top;">單位回覆：</td>
-                <td style="border:1px solid #000;padding:10px 12px;">
-                  <label style="display:block;margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="rp-r1" style="margin-right:6px;">提供服務</label>
-                  <div style="display:flex;align-items:center;gap:8px;">
-                    <label style="cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;"><input type="checkbox" id="rp-r2">無法提供服務，原因：</label>
-                    <input id="rp-reply-reason" type="text" style="border:none;border-bottom:1px solid #ccc;outline:none;flex:1;font-size:13px;font-family:inherit;" placeholder="請填寫原因">
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td style="border:1px solid #000;padding:10px 12px;font-weight:600;vertical-align:top;">處理情形：</td>
-                <td style="border:1px solid #000;padding:8px 12px;">
-                  <textarea id="rp-reply-detail" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;" placeholder="請填寫處理情形"></textarea>
-                </td>
-              </tr>
-              <tr>
-                <td style="border:1px solid #000;padding:12px;text-align:center;font-weight:600;">收案人員</td>
-                <td style="border:1px solid #000;padding:8px 12px;"><input id="rp-caseworker" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="收案人員姓名"></td>
-              </tr>
-            </table>
-          </div>
-
-        </div>
-      </div>
-    </div>
 
 <!-- MODAL: 尚未聯繫 -->
 <div class="modal-overlay hidden" id="uncontacted-modal">
@@ -1782,7 +1641,7 @@ function toggleSidebar() {
 var _lastPage = '';
 
 function showPage(page) {
-  ['dashboard','generator','records','sentences','homevisit','settings','referral'].forEach(function(p) {
+  ['dashboard','generator','records','sentences','homevisit','settings'].forEach(function(p) {
     var pg = document.getElementById('page-'+p);
     var nv = document.getElementById('nav-'+p);
     if (pg) { pg.classList.remove('active'); pg.classList.add('hidden'); }
@@ -5453,130 +5312,6 @@ function cleanupOldRecords() {
   alert(`✅ 已清除 ${removed} 筆 ${cutoffStr} 以前的聯繫紀錄`);
 }
 
-
-// ========== REFERRAL ==========
-function referralInit() {
-  var sel = document.getElementById('ref-case-select');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">— 選擇個案帶入 —</option>' +
-    cases.filter(function(c){ return c.status!=='結案'; })
-    .map(function(c){ return '<option value="'+c.id+'">'+c.id+' '+c.name+'</option>'; }).join('');
-}
-function referralLoadCase() {
-  var id = document.getElementById('ref-case-select').value;
-  if (!id) return;
-  var c = cases.find(function(x){ return x.id===id; });
-  if (!c) return;
-  var rfSet=function(elId,val){ var el=document.getElementById(elId); if(el) el.value=val||''; };
-  rfSet('rf-name',c.name); rfSet('rf-address',c.address); rfSet('rf-phone',c.phone);
-  rfSet('rf-idno',c.idNo||'');
-  rfSet('rf-cm-sign',c.worker||getSysConfig().workerName||'');
-  rfSet('rf-org-phone',getSysConfig().workerPhone||'');
-  if (c.contacts&&c.contacts.length) {
-    var ct=c.contacts[0]; rfSet('rf-contact',ct.name); rfSet('rf-relation',ct.relation);
-    if(ct.phone) rfSet('rf-phone',ct.phone);
-  }
-  if (c.gender) document.querySelectorAll('input[name="rf-gender"]').forEach(function(r){ r.checked=r.value===c.gender; });
-  var sum=[];
-  if(c.shortGoal) sum.push('短期目標：'+c.shortGoal);
-  if(c.midGoal)   sum.push('中期目標：'+c.midGoal);
-  if(c.longGoal)  sum.push('長期目標：'+c.longGoal);
-  if(c.note)      sum.push(c.note);
-  rfSet('rf-summary',sum.join('\n').trim());
-}
-function referralClear() {
-  if(!confirm('確定清除所有填寫內容？')) return;
-  ['rf-name','rf-by','rf-bm','rf-bd','rf-idno','rf-address','rf-contact','rf-relation',
-   'rf-phone','rf-type-other','rf-unit','rf-summary','rf-cm-sign','rf-mgr-sign',
-   'rf-org-phone','rf-reply-reason','rf-reply-detail','rf-caseworker'].forEach(function(id){
-    var el=document.getElementById(id); if(el) el.value='';
-  });
-  ['rf-phone-self','rf-phone-contact','rf-t1','rf-t2','rf-t3','rf-t4','rf-t5','rf-r1','rf-r2'].forEach(function(id){
-    var el=document.getElementById(id); if(el) el.checked=false;
-  });
-  document.querySelectorAll('input[name="rf-gender"]').forEach(function(el){ el.checked=false; });
-  document.getElementById('ref-case-select').value='';
-  var out=document.getElementById('referral-output');
-  if(out) out.innerHTML='<span style="color:var(--text3);font-style:italic">填寫左側表單後點「產生轉介單文字」…</span>';
-}
-function referralGenerate() {
-  var name=document.getElementById('rf-name').value.trim();
-  var gender=(document.querySelector('input[name="rf-gender"]:checked')||{}).value||'';
-  var by=document.getElementById('rf-by').value.trim();
-  var bm=document.getElementById('rf-bm').value.trim();
-  var bd=document.getElementById('rf-bd').value.trim();
-  var bday=(by||bm||bd)?'民國'+by+'年'+bm+'月'+bd+'日':'';
-  var idno=document.getElementById('rf-idno').value.trim();
-  var address=document.getElementById('rf-address').value.trim();
-  var contact=document.getElementById('rf-contact').value.trim();
-  var relation=document.getElementById('rf-relation').value.trim();
-  var phoneSelf=document.getElementById('rf-phone-self').checked;
-  var phoneContact=document.getElementById('rf-phone-contact').checked;
-  var phone=document.getElementById('rf-phone').value.trim();
-  var phoneWho=[phoneSelf?'本人':'',phoneContact?'聯絡人':''].filter(Boolean).join('／');
-  var tLabels=['醫事/社照C據點','失智據點','失智共照中心','到宅牙醫','其他'];
-  var types=['rf-t1','rf-t2','rf-t3','rf-t4','rf-t5'].reduce(function(a,id,i){
-    if(document.getElementById(id).checked) a.push(tLabels[i]); return a;},[]);
-  var tOther=document.getElementById('rf-type-other').value.trim();
-  if(tOther) types.push(tOther);
-  var unit=document.getElementById('rf-unit').value.trim();
-  var summary=document.getElementById('rf-summary').value.trim();
-  var cmSign=document.getElementById('rf-cm-sign').value.trim();
-  var mgrSign=document.getElementById('rf-mgr-sign').value.trim();
-  var orgPhone=document.getElementById('rf-org-phone').value.trim();
-  var r1=document.getElementById('rf-r1').checked;
-  var r2=document.getElementById('rf-r2').checked;
-  var rReason=document.getElementById('rf-reply-reason').value.trim();
-  var rDetail=document.getElementById('rf-reply-detail').value.trim();
-  var cworker=document.getElementById('rf-caseworker').value.trim();
-  var L=[];
-  L.push('【齡活居家長照機構　其他服務轉介單】');
-  L.push('');
-  L.push('▌ 個案基本資料');
-  L.push('姓　　名：'+(name||'—')+'　　性別：'+(gender||'—'));
-  L.push('出生日期：'+(bday||'—'));
-  L.push('身分證號：'+(idno||'—'));
-  L.push('居住地址：'+(address||'—'));
-  L.push('');
-  L.push('▌ 聯絡人資料');
-  L.push('主要聯絡人：'+(contact||'—')+'　關係：'+(relation||'—'));
-  L.push('聯絡電話：'+(phone||'—')+(phoneWho?'（'+phoneWho+'）':''));
-  L.push('');
-  L.push('▌ 轉介資訊');
-  L.push('轉介類型：'+(types.length?types.join('、'):'—'));
-  L.push('收案單位：'+(unit||'—'));
-  L.push('');
-  L.push('▌ 個案概況（近三個月身心、家庭情形）');
-  L.push(summary||'—');
-  L.push('');
-  L.push('▌ 核章');
-  L.push('個管師：'+(cmSign||'—')+'　　主管：'+(mgrSign||'—'));
-  L.push('轉介單位：齡活有限公司附設新北市私立齡活居家長照機構');
-  if(orgPhone) L.push('聯絡電話：'+orgPhone);
-  L.push('傳　　真：02-89650321');
-  if(r1||r2||rDetail||cworker){
-    L.push(''); L.push('────────────────────');
-    L.push('▌ 回覆單');
-    if(r1) L.push('□ 提供服務');
-    if(r2) L.push('□ 無法提供服務，原因：'+(rReason||'—'));
-    if(rDetail) L.push('處理情形：'+rDetail);
-    if(cworker) L.push('收案人員：'+cworker);
-  }
-  document.getElementById('referral-output').textContent=L.join('\n');
-}
-function referralCopyOutput() {
-  var text=document.getElementById('referral-output').textContent;
-  if(!text||text.includes('填寫左側')){alert('請先產生轉介單文字');return;}
-  navigator.clipboard.writeText(text).then(function(){alert('✅ 已複製到剪貼簿');});
-}
-function referralPrint() {
-  var style=document.createElement('style');
-  style.id='print-override';
-  style.textContent='@media print{.sidebar,.topbar{display:none!important;}body{background:#fff!important;}}';
-  document.head.appendChild(style);
-  window.print();
-  setTimeout(function(){var s=document.getElementById('print-override');if(s)s.remove();},1000);
-}
 var THEME_PRESETS = [
   { name:'森林綠', accent:'#2d5a27', accent2:'#4a9040' },
   { name:'海洋藍', accent:'#1a5276', accent2:'#2980b9' },
