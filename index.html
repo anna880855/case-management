@@ -1,4 +1,4 @@
-=<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
@@ -334,6 +334,7 @@
         🔑 設定 API Key
       </button>
       <button type="button" onclick="forceSyncFromCloud()" style="width:100%;margin-bottom:6px;padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.12);color:#fff;cursor:pointer;font-size:11px;font-family:inherit">☁️ 強制同步雲端</button>
+      <button type="button" onclick="syncToCloud()" style="width:100%;margin-bottom:6px;padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.12);color:#fff;cursor:pointer;font-size:11px;font-family:inherit">⬆️ 上傳至雲端</button>
       <div id="s-api-key-status" style="font-size:10px;margin-top:5px;opacity:0.7"></div>
     </div>
   </div>
@@ -1290,12 +1291,18 @@ async function initCloudSync(){
 }
 function saveData(key,val){
   localStorage.setItem(key,JSON.stringify(val));
-  if(!APPS_SCRIPT_URL) return;
-  if(key==='cases'){_showSync('☁️ 儲存中…','#888');_api('importAll',{cases:val}).then(function(){_showSync('☁️ 已儲存','#2d6a4f');_hideSync();}).catch(function(){_showSync('⚠️ 雲端儲存失敗','#e07b39');_hideSync(4000);});}
-  else if(key==='records'){_showSync('☁️ 儲存中…','#888');_api('importAll',{records:val}).then(function(){_showSync('☁️ 已儲存','#2d6a4f');_hideSync();}).catch(function(){_showSync('⚠️ 雲端儲存失敗','#e07b39');_hideSync(4000);});}
-  else if(key==='sentences'){_api('saveAllSentences',{sentences:val}).catch(function(){});}
-  else if(key==='sys_config'){_api('saveConfig',val).catch(function(){});}
+  // 僅存本機，需手動按「同步雲端」才推送
 }
+async function syncToCloud() {
+  if (!APPS_SCRIPT_URL) { alert('請先在設定頁填入 Apps Script URL'); return; }
+  _showSync('☁️ 上傳中…','#888');
+  try {
+    await _api('importAll', { cases:cases, records:records, sentences:sentences });
+    _showSync('☁️ 上傳完成！','#2d6a4f'); _hideSync(2000);
+    alert('✅ 已上傳所有資料至雲端');
+  } catch(e) { _showSync('⚠️ 上傳失敗','#e07b39'); _hideSync(4000); alert('❌ 上傳失敗：'+e.message); }
+}
+
 async function forceSyncFromCloud(){
   if(!APPS_SCRIPT_URL){alert('請先在設定頁填入 Apps Script URL');return;}
   _showSync('☁️ 重新同步中…','#888');
