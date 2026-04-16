@@ -1296,10 +1296,19 @@ async function syncToCloud() {
   if (!APPS_SCRIPT_URL) { alert('請先在設定頁填入 Apps Script URL'); return; }
   _showSync('☁️ 上傳中…','#888');
   try {
-    await _api('importAll', { cases:cases, records:records, sentences:sentences });
-    _showSync('☁️ 上傳完成！','#2d6a4f'); _hideSync(2000);
-    alert('✅ 已上傳所有資料至雲端');
-  } catch(e) { _showSync('⚠️ 上傳失敗','#e07b39'); _hideSync(4000); alert('❌ 上傳失敗：'+e.message); }
+    var payload = JSON.stringify({ action:'importAll', cases:cases, records:records, sentences:sentences });
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: payload
+    });
+    _showSync('☁️ 已送出（no-cors）','#2d6a4f'); _hideSync(2500);
+    alert('✅ 資料已送出至雲端（Apps Script CORS 限制，無法確認是否成功，請到試算表確認）');
+  } catch(e) {
+    _showSync('⚠️ 上傳失敗','#e07b39'); _hideSync(4000);
+    alert('❌ 上傳失敗：' + e.message);
+  }
 }
 
 async function forceSyncFromCloud(){
