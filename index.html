@@ -1267,10 +1267,9 @@ function _showSync(msg,color){
 function _hideSync(delay){setTimeout(function(){if(_syncEl)_syncEl.style.opacity='0';},delay||2000);}
 async function _api(action,body){
   if(!APPS_SCRIPT_URL) throw new Error('請先設定 Apps Script URL');
-  var url=APPS_SCRIPT_URL+'?action='+action;
-  var opts={method:'GET',redirect:'follow'};
-  if(body){opts.method='POST';opts.headers={'Content-Type':'text/plain'};opts.body=JSON.stringify(body);}
-  var res=await fetch(url,opts);
+  var url=APPS_SCRIPT_URL+'?action='+encodeURIComponent(action);
+  if(body){url+='&body='+encodeURIComponent(JSON.stringify(body));}
+  var res=await fetch(url,{redirect:'follow'});
   var json=await res.json();
   if(!json.ok) throw new Error(json.error||'API 錯誤');
   return json.data;
