@@ -1316,9 +1316,15 @@ async function forceSyncFromCloud(){
   _showSync('☁️ 重新同步中…','#888');
   try{
     var data=await _api('exportAll');
-    if(data.cases){localStorage.setItem('cases',JSON.stringify(data.cases));cases=data.cases;}
-    if(data.records){localStorage.setItem('records',JSON.stringify(data.records));records=data.records;}
-    if(data.sentences){localStorage.setItem('sentences',JSON.stringify(data.sentences));sentences=data.sentences;}
+    if(data.cases){cases=data.cases;localStorage.setItem('cases',JSON.stringify(cases));}
+    if(data.records){
+      // 只保留最新各 10 筆電訪 + 10 筆家訪
+      var phoneRecs = data.records.filter(function(r){return r.contactType!=='home';}).slice(0,10);
+      var homeRecs  = data.records.filter(function(r){return r.contactType==='home';}).slice(0,10);
+      records = phoneRecs.concat(homeRecs).sort(function(a,b){return b.date.localeCompare(a.date);});
+      localStorage.setItem('records',JSON.stringify(records));
+    }
+    if(data.sentences){sentences=data.sentences;localStorage.setItem('sentences',JSON.stringify(sentences));}
     _showSync('☁️ 同步完成！','#2d6a4f');_hideSync(2000);renderDashboard();
     alert('✅ 已從雲端重新同步所有資料');
   }catch(e){_showSync('⚠️ 同步失敗','#e07b39');_hideSync(4000);alert('❌ 同步失敗：'+e.message);}
@@ -1646,6 +1652,8 @@ function svcBadges(types) {
       <td class="flex gap-2"><button type="button" class="btn btn-secondary btn-sm" onclick="genForCase('${c.id}')">✍️ 聯繫</button><button type="button" class="btn btn-secondary btn-sm" onclick="openCaseModal('${c.id}')">✏️</button><button type="button" class="btn btn-secondary btn-sm" style="color:var(--danger)" onclick="deleteCase('${c.id}')">🗑</button></td>
     </tr>`;
   }).join('');
+
+  renderCaseTable();
 }
 
 function openHvModal(type) {
@@ -1758,21 +1766,37 @@ function contactTypeSelect(type) {
 function renderCaseTable() {
   var tbody = document.getElementById('case-tbody');
   if (!tbody) return;
-  var q = (document.getElementById('case-search')?.value || '').toLowerCase();
-  var filtered = cases.filter(c => c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q));
+  var q = ((document.getElementById('case-search') || {}).value || '').toLowerCase();
+  var statusFilter = currentStatusFilter || '全部';
+  var filtered = cases.filter(function(c) {
+    var matchQ = !q || c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q);
+    var matchS = statusFilter === '全部' || c.status === statusFilter;
+    return matchQ && matchS;
+  });
   if (!filtered.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)">尚無個案資料</td></tr>';
     return;
   }
-  tbody.innerHTML = filtered.map(c => `<tr>
-    <td><span style="font-family:'DM Mono',monospace;font-size:12px">${c.id}</span></td>
-    <td><b>${c.name}</b></td>
-    <td>${c.phone||'—'}</td>
-    <td>${svcBadges(c.serviceTypes)}</td>
-    <td>${c.worker||'—'}</td>
-    <td><span class="badge ${c.status==='在案'?'badge-green':c.status==='暫停'?'badge-orange':'badge-gray'}">${c.status}</span></td>
-    <td class="flex gap-2"><button type="button" class="btn btn-secondary btn-sm" onclick="openCaseModal('${c.id}')">✏️ 編輯</button><button type="button" class="btn btn-secondary btn-sm" style="color:var(--danger)" onclick="deleteCase('${c.id}')">🗑</button></td>
-  </tr>`).join('');
+  var monthKey = new Date().toISOString().substring(0,7);
+  var contactedThisMonth = new Set(records.filter(function(r){ return r.date.startsWith(monthKey); }).map(function(r){ return r.caseId; }));
+  // 用 DocumentFragment 減少 reflow
+  var frag = document.createDocumentFragment();
+  filtered.forEach(function(c) {
+    var contacted = contactedThisMonth.has(c.id);
+    var tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
+    tr.onclick = function(){ openCaseModal(c.id); };
+    tr.innerHTML = '<td><span style="font-family:monospace;font-size:12px">' + c.id + '</span></td>'
+      + '<td><b>' + (c.name||'') + '</b></td>'
+      + '<td>' + (c.phone||'') + '</td>'
+      + '<td><span style="font-size:12px;padding:2px 8px;border-radius:12px;background:' + (contacted?'var(--accent-light)':'#fff3cd') + ';color:' + (contacted?'var(--accent)':'#856404') + '">' + (contacted?'✅ 已聯繫':'⏳ 未聯繫') + '</span></td>'
+      + '<td>' + (Array.isArray(c.serviceTypes)?c.serviceTypes.join('、'):(c.serviceTypes||'')) + '</td>'
+      + '<td><span style="font-size:12px;padding:2px 8px;border-radius:12px;background:var(--surface2)">' + (c.status||'在案') + '</span></td>'
+      + '<td style="display:flex;gap:4px"><button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openCaseModal(\'' + c.id + '\')">編輯</button></td>';
+    frag.appendChild(tr);
+  });
+  tbody.innerHTML = '';
+  tbody.appendChild(frag);
 }
 
 function renderServiceTypeCheckboxes(selected) {
@@ -4138,7 +4162,7 @@ async function hv2Generate() {
   } else { respiteText = '暫無需求。'; }
 
   // 服務清單
-  var svc1Text = data['hv2-svc2-noneed'] ? '暫無需求。' : hv2SvcItems.filter(function(s){ return s.code; }).map(function(s){ return s.code+'['+s.name+']'+(s.units?'*'+s.units+'/月':'')+(s.note?'（'+s.note+'）':''); }).join('、') || '（待填）';
+  var svc1Text = hv2SvcItems.filter(function(s){ return s.code; }).map(function(s){ return s.code+'['+s.name+']'+(s.units?'*'+s.units+'/月':'')+(s.note?'（'+s.note+'）':''); }).join('、') || '（待填）';
   var svc2Text = data['hv2-svc2-noneed'] ? '暫無需求。' : ('1,840元/月，至'+(data['hv2-transport-hospital']||'（待填）'));
   var svc3Text = data['hv2-svc3-noneed'] ? '暫無需求。' : '（待填）';
   var svc5Text = data['hv2-svc5-noneed'] ? '暫無。' : (data['hv2-referral']||'暫無。');
