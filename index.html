@@ -1643,21 +1643,6 @@ function svcBadges(types) {
   // Table
   var tbody = document.getElementById('dashboard-tbody');
   var dq = (document.getElementById('dashboard-search')?.value || '').toLowerCase();
-  var displayCases = dq ? activeCases.filter(c => c.name.includes(dq) || c.id.toLowerCase().includes(dq)) : activeCases;
-  tbody.innerHTML = displayCases.map(c => {
-    var contacted = contactedIds.has(c.id);
-    var lastRec = records.filter(r=>r.caseId===c.id).sort((a,b)=>b.date.localeCompare(a.date))[0];
-    var lastType = lastRec?.contactType === 'home' ? '🏠 家訪' : lastRec ? '📞 電訪' : '—';
-    return `<tr>
-      <td><span style="font-family:'DM Mono',monospace;font-size:12px">${c.id}</span></td>
-      <td><b>${c.name}</b></td>
-      <td><span class="dot ${contacted?'dot-green':'dot-orange'}"></span>${contacted?'已聯繫（電訪或家訪）':'未聯繫'}</td>
-      <td>${lastRec ? lastRec.date.substring(0,10)+' '+lastType : '—'}</td>
-      <td>${svcBadges(c.serviceTypes)}</td>
-      <td class="flex gap-2"><button type="button" class="btn btn-secondary btn-sm" onclick="genForCase('${c.id}')">✍️ 聯繫</button><button type="button" class="btn btn-secondary btn-sm" onclick="openCaseModal('${c.id}')">✏️</button><button type="button" class="btn btn-secondary btn-sm" style="color:var(--danger)" onclick="deleteCase('${c.id}')">🗑</button></td>
-    </tr>`;
-  }).join('');
-
   renderCaseTable();
 }
 
