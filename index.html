@@ -333,8 +333,7 @@
       <button type="button" onclick="promptApiKey()" style="width:100%;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;padding:6px 8px;border-radius:5px;cursor:pointer;font-size:11px;text-align:left">
         🔑 設定 API Key
       </button>
-      <button type="button" onclick="forceSyncFromCloud()" style="width:100%;margin-bottom:6px;padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.12);color:#fff;cursor:pointer;font-size:11px;font-family:inherit">☁️ 強制同步雲端</button>
-      <button type="button" onclick="syncToCloud()" style="width:100%;margin-bottom:6px;padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.12);color:#fff;cursor:pointer;font-size:11px;font-family:inherit">⬆️ 上傳至雲端</button>
+      <button type="button" onclick="initCloudSync()" style="width:100%;margin-bottom:6px;padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.12);color:#fff;cursor:pointer;font-size:11px;font-family:inherit">☁️ 同步個案資料</button>
       <div id="s-api-key-status" style="font-size:10px;margin-top:5px;opacity:0.7"></div>
     </div>
   </div>
@@ -1278,15 +1277,22 @@ async function initCloudSync(){
   var saved=localStorage.getItem('apps_script_url');
   if(saved) APPS_SCRIPT_URL=saved;
   if(!APPS_SCRIPT_URL) return;
-  _showSync('☁️ 同步中…','#888');
+  _showSync('☁️ 同步個案資料…','#888');
   try{
-    var data=await _api('exportAll');
-    if(data.cases&&data.cases.length>0){localStorage.setItem('cases',JSON.stringify(data.cases));cases=data.cases;}
-    if(data.records&&data.records.length>0){localStorage.setItem('records',JSON.stringify(data.records));records=data.records;}
-    if(data.sentences&&data.sentences.length>0){localStorage.setItem('sentences',JSON.stringify(data.sentences));sentences=data.sentences;}
-    _showSync('☁️ 已同步','#2d6a4f');_hideSync(2500);
+    var data=await _api('getCasesOnly');
+    if(data&&data.cases&&data.cases.length>0){
+      cases=data.cases;
+      localStorage.setItem('cases',JSON.stringify(cases));
+    }
+    if(data&&data.sentences&&data.sentences.length>0){
+      sentences=data.sentences;
+      localStorage.setItem('sentences',JSON.stringify(sentences));
+    }
+    _showSync('☁️ 個案資料已同步','#2d6a4f');_hideSync(2000);
     renderDashboard();
-  }catch(e){_showSync('⚠️ 雲端同步失敗，使用本機資料','#e07b39');_hideSync(4000);console.error('[雲端同步]',e);}
+  }catch(e){
+    _showSync('⚠️ 同步失敗','#e07b39');_hideSync(3000);
+  }
 }
 function saveData(key,val){
   localStorage.setItem(key,JSON.stringify(val));
@@ -2500,6 +2506,16 @@ function saveRecord() {
     var genDateEl = document.getElementById('gen-date');
     cases[cIdx].lastCallDate = genDateEl ? genDateEl.value : new Date().toISOString().substring(0,10);
     saveData('cases', cases);
+  }
+  // 即時上傳這一筆紀錄 + 更新個案基本資料
+  if (APPS_SCRIPT_URL) {
+    _showSync('☁️ 上傳中…','#888');
+    fetch(APPS_SCRIPT_URL, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ action:'saveNewRecord', record:rec, updateCase: cIdx>=0 ? cases[cIdx] : null })
+    }).then(function(){ _showSync('☁️ 已上傳','#2d6a4f'); _hideSync(2000); })
+      .catch(function(){ _showSync('⚠️ 上傳失敗','#e07b39'); _hideSync(3000); });
   }
   alert('✅ 已儲存電訪紀錄');
   // 清除表單，準備下一位個案
@@ -4308,6 +4324,7 @@ function hv2SaveRecord() {
     cases[cIdx2].lastHvDate = hv2DateEl ? hv2DateEl.value : new Date().toISOString().substring(0,10);
     saveData('cases', cases);
   }
+  // 即時上傳這一筆家訪紀錄 + 更新個案基本資料（目標在後面抽取後一起送）
   // 從輸出文字抽取短中長期目標，同步更新個案資料
   (function() {
     var cIdx = cases.findIndex(function(x){ return x.id===caseId; });
@@ -4325,9 +4342,19 @@ function hv2SaveRecord() {
     if (sg || mg || lg) {
       cases[cIdx].goalUpdated = new Date().toISOString().substring(0,10);
       saveData('cases', cases);
-      if (APPS_SCRIPT_URL) { _api('saveCase', cases[cIdx]).catch(function(){}); }
     }
   })();
+  // 即時上傳這一筆紀錄 + 更新個案基本資料
+  if (APPS_SCRIPT_URL) {
+    var uploadCase = cases.find(function(x){ return x.id===caseId; });
+    _showSync('☁️ 上傳中…','#888');
+    fetch(APPS_SCRIPT_URL, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ action:'saveNewRecord', record:rec, updateCase: uploadCase || null })
+    }).then(function(){ _showSync('☁️ 已上傳','#2d6a4f'); _hideSync(2000); })
+      .catch(function(){ _showSync('⚠️ 上傳失敗','#e07b39'); _hideSync(3000); });
+  }
   alert('✅ 已儲存家訪記錄');
   // 清除表單
   hv2Init();
