@@ -1600,7 +1600,12 @@ function renderDashboard() {
 
   var monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
   var activeCases = currentStatusFilter === '全部' ? cases : cases.filter(c => c.status === currentStatusFilter);
-  var contactedIds = new Set(records.filter(r => r.date.startsWith(monthKey)).map(r => r.caseId));
+  // 從個案基本資料的 lastCallDate/lastHvDate 判斷（不受紀錄數量限制）
+  var contactedIds = new Set(cases.filter(function(c) {
+    var callDate = (c.lastCallDate||'').substring(0,7);
+    var hvDate   = (c.lastHvDate||'').substring(0,7);
+    return callDate === monthKey || hvDate === monthKey;
+  }).map(function(c){ return c.id; }));
   var uncontacted = activeCases.filter(c => !contactedIds.has(c.id));
 
   // Cards
@@ -1778,7 +1783,11 @@ function renderCaseTable() {
     return;
   }
   var monthKey = new Date().toISOString().substring(0,7);
-  var contactedThisMonth = new Set(records.filter(function(r){ return r.date.startsWith(monthKey); }).map(function(r){ return r.caseId; }));
+  var contactedThisMonth = new Set(cases.filter(function(c) {
+    var callDate = (c.lastCallDate||'').substring(0,7);
+    var hvDate   = (c.lastHvDate||'').substring(0,7);
+    return callDate === monthKey || hvDate === monthKey;
+  }).map(function(c){ return c.id; }));
   // 用 DocumentFragment 減少 reflow
   var frag = document.createDocumentFragment();
   filtered.forEach(function(c) {
@@ -2500,7 +2509,13 @@ function saveRecord() {
   };
   records.unshift(rec);
   saveData('records', records);
-  if (APPS_SCRIPT_URL) { _api('saveRecord', rec).catch(function(){}); }
+  // 更新個案的最後電訪日
+  var cIdx = cases.findIndex(function(x){ return x.id===caseId; });
+  if (cIdx >= 0) {
+    var genDateEl = document.getElementById('gen-date');
+    cases[cIdx].lastCallDate = genDateEl ? genDateEl.value : new Date().toISOString().substring(0,10);
+    saveData('cases', cases);
+  }
   alert('✅ 已儲存電訪紀錄');
   // 清除表單，準備下一位個案
   document.getElementById('gen-output').value = '';
@@ -4301,8 +4316,12 @@ function hv2SaveRecord() {
   };
   records.unshift(rec);
   saveData('records', records);
-  if (APPS_SCRIPT_URL) {
-    _api('saveRecord', rec).catch(function(){});
+  // 更新個案的最後家訪日
+  var cIdx2 = cases.findIndex(function(x){ return x.id===caseId; });
+  if (cIdx2 >= 0) {
+    var hv2DateEl = document.getElementById('hv2-date');
+    cases[cIdx2].lastHvDate = hv2DateEl ? hv2DateEl.value : new Date().toISOString().substring(0,10);
+    saveData('cases', cases);
   }
   // 從輸出文字抽取短中長期目標，同步更新個案資料
   (function() {
