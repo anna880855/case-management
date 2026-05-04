@@ -1760,7 +1760,7 @@ function contactTypeSelect(type) {
 
 // ========== CASES ==========
 function renderCaseTable() {
-  var tbody = document.getElementById('case-tbody');
+  var tbody = document.getElementById('dashboard-tbody');
   if (!tbody) return;
   var q = ((document.getElementById('case-search') || {}).value || '').toLowerCase();
   var statusFilter = currentStatusFilter || '全部';
