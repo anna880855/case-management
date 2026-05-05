@@ -1762,7 +1762,7 @@ function contactTypeSelect(type) {
 function renderCaseTable() {
   var tbody = document.getElementById('dashboard-tbody');
   if (!tbody) return;
-  var q = ((document.getElementById('case-search') || {}).value || '').toLowerCase();
+  var q = ((document.getElementById('dashboard-search') || {}).value || '').toLowerCase();
   var statusFilter = currentStatusFilter || '全部';
   var filtered = cases.filter(function(c) {
     var matchQ = !q || c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q);
@@ -3915,25 +3915,41 @@ function hv2RenderSvc1() {
   list.innerHTML = '';
   hv2SvcItems.forEach(function(item, i) {
     var row = document.createElement('div');
-    row.style.cssText = 'display:grid;grid-template-columns:120px 1fr 80px auto;gap:6px;align-items:center';
+    row.style.cssText = 'display:grid;grid-template-columns:140px 1fr 120px auto;gap:6px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px';
     // 代碼選擇
     var sel = document.createElement('select');
     sel.style.fontSize = '12px';
     sel.innerHTML = '<option value="">選擇代碼</option>' + HV2_SVC_CODES.map(function(s){ return '<option value="' + s.code + '" ' + (item.code===s.code?'selected':'') + '>' + s.code + '　' + s.name + '</option>'; }).join('');
-    sel.onchange = (function(idx){ return function(){ hv2SvcItems[idx].code = this.value; var n = HV2_SVC_CODES.find(function(s){ return s.code===this.value; },this); hv2SvcItems[idx].name = n?n.name:''; }; })(i);
+    sel.onchange = (function(idx){ return function() {
+      var code = this.value;
+      var n = HV2_SVC_CODES.find(function(s){ return s.code===code; });
+      hv2SvcItems[idx].code = code;
+      hv2SvcItems[idx].name = n ? n.name : '';
+      // 更新單位顯示（不自動填入，讓使用者輸入數字即可）
+      var unitsEl = this.parentElement.querySelector('.svc-units-input');
+      if (unitsEl) unitsEl.placeholder = '數量（單位/月）';
+    }; })(i);
     // 備註
     var note = document.createElement('input');
-    note.type='text'; note.placeholder='說明（選填）'; note.value=item.note||''; note.style.fontSize='12px';
+    note.type='text'; note.placeholder='說明（選填）'; note.value=item.note||'';
+    note.style.cssText='font-size:12px;flex:1';
     note.oninput = (function(idx){ return function(){ hv2SvcItems[idx].note = this.value; }; })(i);
-    // 單位
-    var units = document.createElement('input');
-    units.type='text'; units.placeholder='*XX單位'; units.value=item.units||''; units.style.fontSize='12px';
-    units.oninput = (function(idx){ return function(){ hv2SvcItems[idx].units = this.value; }; })(i);
+    // 單位：數字 spinner + 「單位/月」標籤
+    var unitsWrap = document.createElement('div');
+    unitsWrap.style.cssText='display:flex;align-items:center;gap:4px';
+    var unitsNum = document.createElement('input');
+    unitsNum.type='number'; unitsNum.min='1'; unitsNum.className='svc-units-input';
+    unitsNum.placeholder='數量'; unitsNum.style.cssText='width:55px;font-size:12px';
+    unitsNum.value = item.units||'';
+    unitsNum.oninput = (function(idx){ return function(){ hv2SvcItems[idx].units = this.value; }; })(i);
+    var unitsLabel = document.createElement('span');
+    unitsLabel.textContent='單位/月'; unitsLabel.style.cssText='font-size:11px;color:var(--text3);white-space:nowrap';
+    unitsWrap.appendChild(unitsNum); unitsWrap.appendChild(unitsLabel);
     // 刪除
     var del = document.createElement('button');
-    del.type='button'; del.textContent='×'; del.style.cssText='background:none;border:none;cursor:pointer;color:var(--danger);font-size:16px';
+    del.type='button'; del.textContent='×'; del.style.cssText='background:none;border:none;cursor:pointer;color:var(--danger);font-size:16px;padding:0 4px';
     del.onclick = (function(idx){ return function(){ hv2SvcItems.splice(idx,1); hv2RenderSvc1(); }; })(i);
-    row.appendChild(sel); row.appendChild(note); row.appendChild(units); row.appendChild(del);
+    row.appendChild(sel); row.appendChild(note); row.appendChild(unitsWrap); row.appendChild(del);
     list.appendChild(row);
   });
 }
@@ -4178,7 +4194,7 @@ async function hv2Generate() {
   } else { respiteText = '暫無需求。'; }
 
   // 服務清單
-  var svc1Text = hv2SvcItems.filter(function(s){ return s.code; }).map(function(s){ return s.code+'['+s.name+']'+(s.units?'*'+s.units+'/月':'')+(s.note?'（'+s.note+'）':''); }).join('、') || '（待填）';
+  var svc1Text = hv2SvcItems.filter(function(s){ return s.code; }).map(function(s){ return s.code+'['+s.name+']'+(s.units?'*'+s.units+'單位/月':'')+(s.note?'（'+s.note+'）':''); }).join('、') || '（待填）';
   var svc2Text = data['hv2-svc2-noneed'] ? '暫無需求。' : ('1,840元/月，至'+(data['hv2-transport-hospital']||'（待填）'));
   var svc3Text = data['hv2-svc3-noneed'] ? '暫無需求。' : '（待填）';
   var svc5Text = data['hv2-svc5-noneed'] ? '暫無。' : (data['hv2-referral']||'暫無。');
