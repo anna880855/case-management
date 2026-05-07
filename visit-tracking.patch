@@ -1,0 +1,220 @@
+From 359baca6bba0e4691224a7acd9cda880e0724a78 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 6 May 2026 06:35:31 +0000
+Subject: [PATCH] new features
+
+---
+ index.html | 144 +++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 140 insertions(+), 4 deletions(-)
+
+diff --git a/index.html b/index.html
+index 883beb7..092727a 100644
+--- a/index.html
++++ b/index.html
+@@ -372,7 +372,7 @@
+           </div>
+           <div class="panel-body">
+             <div class="table-wrap"><table id="dashboard-table">
+-              <thead><tr><th>案號</th><th>姓名</th><th>本月聯繫</th><th>最後電訪</th><th>服務類型</th><th>操作</th></tr></thead>
++              <thead><tr><th>案號</th><th>姓名</th><th>電話</th><th>本月聯繫</th><th>服務類型</th><th>狀態</th><th>操作</th></tr></thead>
+               <tbody id="dashboard-tbody"></tbody>
+             </table></div>
+           </div>
+@@ -410,6 +410,7 @@
+                       <option value="">— 選擇 —</option>
+                     </select>
+                     <input type="text" id="gen-contact-person-custom" placeholder="手動輸入姓名" style="margin-top:6px;display:none">
++                    <input type="text" id="gen-contact-phone" placeholder="聯絡電話（選填）" style="margin-top:6px" title="電話號碼，儲存紀錄時可更新至個案資料">
+                   </div>
+                   <div class="form-group">
+                     <label>電訪日期</label>
+@@ -1067,6 +1068,37 @@
+ 
+ 
+ 
++<!-- MODAL: 更新聯繫資料 -->
++<div class="modal-overlay hidden" id="contact-update-modal">
++  <div class="modal" style="width:440px">
++    <div class="modal-header">
++      <h3>📱 更新聯繫資料</h3>
++      <button type="button" class="close-btn" onclick="document.getElementById('contact-update-modal').classList.add('hidden')">×</button>
++    </div>
++    <div class="modal-body">
++      <div id="contact-update-msg" style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6;background:var(--accent-light);border-radius:8px;padding:10px 14px"></div>
++      <div class="form-grid">
++        <div class="form-group">
++          <label>姓名 *</label>
++          <input type="text" id="cu-name" placeholder="聯繫人姓名">
++        </div>
++        <div class="form-group">
++          <label>關係</label>
++          <input type="text" id="cu-relation" placeholder="如：案妻、案子">
++        </div>
++        <div class="form-group full">
++          <label>電話</label>
++          <input type="text" id="cu-phone" placeholder="電話號碼">
++        </div>
++      </div>
++    </div>
++    <div class="modal-footer">
++      <button type="button" class="btn btn-secondary" onclick="document.getElementById('contact-update-modal').classList.add('hidden')">略過</button>
++      <button type="button" class="btn btn-primary" onclick="saveContactUpdate()">💾 儲存至個案資料</button>
++    </div>
++  </div>
++</div>
++
+ <!-- MODAL: 草稿列表 -->
+ <div class="modal-overlay hidden" id="draft-modal">
+   <div class="modal" style="width:480px">
+@@ -1792,7 +1824,7 @@ function renderCaseTable() {
+       + '<td><span style="font-size:12px;padding:2px 8px;border-radius:12px;background:' + (contacted?'var(--accent-light)':'#fff3cd') + ';color:' + (contacted?'var(--accent)':'#856404') + '">' + (contacted?'✅ 已聯繫':'⏳ 未聯繫') + '</span></td>'
+       + '<td>' + (Array.isArray(c.serviceTypes)?c.serviceTypes.join('、'):(c.serviceTypes||'')) + '</td>'
+       + '<td><span style="font-size:12px;padding:2px 8px;border-radius:12px;background:var(--surface2)">' + (c.status||'在案') + '</span></td>'
+-      + '<td style="display:flex;gap:4px"><button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openCaseModal(\'' + c.id + '\')">編輯</button></td>';
++      + '<td style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();genForCase(\'' + c.id + '\')">✍️ 聯繫</button><button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openCaseModal(\'' + c.id + '\')">編輯</button></td>';
+     frag.appendChild(tr);
+   });
+   tbody.innerHTML = '';
+@@ -2090,7 +2122,24 @@ function deleteCase(id) {
+ 
+ function genContactPersonChange(sel) {
+   var custom = document.getElementById('gen-contact-person-custom');
++  var phoneEl = document.getElementById('gen-contact-phone');
+   custom.style.display = sel.value === '__custom__' ? 'block' : 'none';
++  if (phoneEl) {
++    if (sel.value === '__custom__') {
++      phoneEl.value = '';
++    } else if (sel.value) {
++      var caseId = document.getElementById('gen-name').value;
++      var c = cases.find(function(x){ return x.id === caseId; });
++      var contacts = c && Array.isArray(c.contacts) ? c.contacts : [];
++      var ct = contacts.find(function(ct) {
++        var label = ct.relation ? ct.relation + '-' + ct.name : ct.name;
++        return label === sel.value || ct.name === sel.value;
++      });
++      phoneEl.value = ct ? (ct.phone || '') : '';
++    } else {
++      phoneEl.value = '';
++    }
++  }
+ }
+ 
+ function getGenContactPerson() {
+@@ -2192,8 +2241,10 @@ function loadCaseForGen() {
+       return \`<option value="\${label}">\${display}</option>\`;
+     }).join('') +
+     '<option value="__custom__">✏️ 手動輸入…</option>';
+-  cpSel.value = contacts.length ? contacts[0].name : '';
++  cpSel.value = contacts.length ? (contacts[0].relation ? contacts[0].relation + '-' + contacts[0].name : contacts[0].name) : '';
+   cpCustom.style.display = 'none';
++  var cpPhoneEl = document.getElementById('gen-contact-phone');
++  if (cpPhoneEl) cpPhoneEl.value = contacts.length ? (contacts[0].phone || '') : '';
+   document.getElementById('gen-short-goal').value = c.shortGoal||'';
+   document.getElementById('gen-mid-goal').value = c.midGoal||'';
+   document.getElementById('gen-long-goal').value = c.longGoal||'';
+@@ -2517,6 +2568,13 @@ function saveRecord() {
+     }).then(function(){ _showSync('☁️ 已上傳','#2d6a4f'); _hideSync(2000); })
+       .catch(function(){ _showSync('⚠️ 上傳失敗','#e07b39'); _hideSync(3000); });
+   }
++  var _cpSel = document.getElementById('gen-contact-person');
++  var _cpPhone = (document.getElementById('gen-contact-phone') || {}).value || '';
++  var _cpCustomName = (document.getElementById('gen-contact-person-custom') || {}).value.trim();
++  var _cpSelVal = _cpSel ? _cpSel.value : '';
++  var _savedCaseId = caseId;
++
+   alert('✅ 已儲存電訪紀錄');
+   // 清除表單，準備下一位個案
+   document.getElementById('gen-output').value = '';
+@@ -2535,6 +2593,9 @@ function saveRecord() {
+   // 重設額外備註
+   var extraNote = document.getElementById('gen-extra-note');
+   if (extraNote) extraNote.value = '';
++  var cpPhoneEl = document.getElementById('gen-contact-phone');
++  if (cpPhoneEl) cpPhoneEl.value = '';
+   // 重設日期時間為最新
+   var genDate = document.getElementById('gen-date');
+   var genTime = document.getElementById('gen-time');
+@@ -2545,6 +2606,81 @@ function saveRecord() {
+     var mm = String(now.getMinutes()).padStart(2,'0');
+     genTime.value = hh + ':' + mm;
+   }
++  _checkContactUpdate(_savedCaseId, _cpSelVal, _cpCustomName, _cpPhone);
++}
++
++function _checkContactUpdate(caseId, selVal, customName, phone) {
++  var c = cases.find(function(x){ return x.id === caseId; });
++  if (!c) return;
++  var contacts = Array.isArray(c.contacts) ? c.contacts : [];
++  if (selVal === '__custom__' && customName) {
++    openContactUpdateModal(caseId, {name: customName, relation: '', phone: phone, isNew: true});
++    return;
++  }
++  if (selVal && selVal !== '__custom__' && phone) {
++    var ct = contacts.find(function(ct) {
++      var label = ct.relation ? ct.relation + '-' + ct.name : ct.name;
++      return label === selVal || ct.name === selVal;
++    });
++    if (ct && ct.phone !== phone) {
++      openContactUpdateModal(caseId, {name: ct.name, relation: ct.relation || '', phone: phone, isNew: false});
++    } else if (!ct && phone) {
++      openContactUpdateModal(caseId, {name: selVal, relation: '', phone: phone, isNew: true});
++    }
++  }
++}
++
++var _contactUpdateCaseId = null;
++var _contactUpdateIsNew = false;
++var _contactUpdateOrigName = null;
++
++function openContactUpdateModal(caseId, contact) {
++  _contactUpdateCaseId = caseId;
++  _contactUpdateIsNew = !!contact.isNew;
++  _contactUpdateOrigName = contact.name;
++  var c = cases.find(function(x){ return x.id === caseId; });
++  var caseName = c ? c.name : caseId;
++  var msgEl = document.getElementById('contact-update-msg');
++  if (msgEl) {
++    msgEl.innerHTML = _contactUpdateIsNew
++      ? '📌 電訪中使用了新的聯繫對象，是否將 <b>「' + contact.name + '」</b> 加入個案 <b>' + caseName + '</b> 的聯繫資料？<br><span style="font-size:12px;color:var(--text3)">加入後下次電訪可直接從下拉選單選取</span>'
++      : '📝 電訪中記錄的電話與個案資料不同，是否更新 <b>「' + contact.name + '」</b> 的聯繫電話？';
++  }
++  document.getElementById('cu-name').value = contact.name || '';
++  document.getElementById('cu-relation').value = contact.relation || '';
++  document.getElementById('cu-phone').value = contact.phone || '';
++  document.getElementById('contact-update-modal').classList.remove('hidden');
++}
++
++function saveContactUpdate() {
++  var name = document.getElementById('cu-name').value.trim();
++  if (!name) { alert('請填入姓名'); return; }
++  var relation = document.getElementById('cu-relation').value.trim();
++  var phone = document.getElementById('cu-phone').value.trim();
++  var cIdx = cases.findIndex(function(x){ return x.id === _contactUpdateCaseId; });
++  if (cIdx < 0) { document.getElementById('contact-update-modal').classList.add('hidden'); return; }
++  var contacts = Array.isArray(cases[cIdx].contacts) ? cases[cIdx].contacts.slice() : [];
++  if (_contactUpdateIsNew) {
++    contacts.push({name: name, relation: relation, phone: phone});
++  } else {
++    var ci = contacts.findIndex(function(ct){ return ct.name === _contactUpdateOrigName; });
++    if (ci >= 0) {
++      contacts[ci] = {name: name, relation: relation, phone: phone};
++    } else {
++      contacts.push({name: name, relation: relation, phone: phone});
++    }
++  }
++  cases[cIdx].contacts = contacts;
++  saveData('cases', cases);
++  document.getElementById('contact-update-modal').classList.add('hidden');
++  alert('✅ 聯繫資料已更新至個案「' + (cases[cIdx].name || _contactUpdateCaseId) + '」');
+ }
+ 
+ // ========== RECORDS ==========
+@@ -5465,7 +5601,7 @@ document.addEventListener('DOMContentLoaded', function() {
+ // ── 關閉所有 Modal（點外部或按 ESC）──
+ function closeAllModals() {
+   ['contact-type-modal','case-modal','record-modal','sentence-modal',
+-   'draft-modal','uncontacted-modal','import-mobile-modal','hv-modal'].forEach(function(id) {
++   'draft-modal','uncontacted-modal','import-mobile-modal','hv-modal','contact-update-modal'].forEach(function(id) {
+     var el = document.getElementById(id);
+     if (el) el.classList.add('hidden');
+   });

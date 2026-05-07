@@ -320,11 +320,8 @@
       <div class="nav-item" onclick="showPage('homevisit')" id="nav-homevisit">
         <span class="icon">🏡</span><span class="nav-label"> 家訪</span>記錄產生器
       </div>
-      <div class="nav-item" onclick="openSettings()" id="nav-settings">
+      <div class="nav-item" onclick="showPage('settings')" id="nav-settings">
         <span class="icon">⚙️</span><span class="nav-label"> 系統設定</span>
-      </div>
-      <div class="nav-item" onclick="showPage('referral')" id="nav-referral">
-        <span class="icon">📋</span><span class="nav-label"> 轉介單</span>
       </div>
     </nav>
     <div class="sidebar-footer" style="padding:14px 16px">
@@ -336,8 +333,8 @@
       <button type="button" onclick="promptApiKey()" style="width:100%;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;padding:6px 8px;border-radius:5px;cursor:pointer;font-size:11px;text-align:left">
         🔑 設定 API Key
       </button>
-      <button type="button" onclick="forceSyncFromCloud()" style="width:100%;margin-bottom:6px;padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.12);color:#fff;cursor:pointer;font-size:11px;font-family:inherit">☁️ 強制同步雲端</button>
-      <div id="api-key-status" style="font-size:10px;margin-top:5px;opacity:0.7"></div>
+      <button type="button" onclick="initCloudSync()" style="width:100%;margin-bottom:6px;padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.12);color:#fff;cursor:pointer;font-size:11px;font-family:inherit">☁️ 同步個案資料</button>
+      <div id="s-api-key-status" style="font-size:10px;margin-top:5px;opacity:0.7"></div>
     </div>
   </div>
 
@@ -950,154 +947,58 @@
     </div>
   </div>
 </div>
-
-
-    
-
-    <!-- PAGE: REFERRAL -->
-    <div id="page-referral" class="page hidden">
-      <div class="topbar" style="flex-shrink:0;">
-        <div>
-          <h2>📋 其他服務轉介單</h2>
-          <div class="topbar-sub">填寫完成後點「產生轉介單文字」複製使用</div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap;">
-          <select id="ref-case-select" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;min-width:200px;" onchange="referralLoadCase()">
-            <option value="">— 選擇個案帶入 —</option>
-          </select>
-          <button type="button" class="btn btn-secondary" onclick="referralClear()">🔄 清除</button>
-          <button type="button" class="btn btn-primary" onclick="referralGenerate()">📄 產生轉介單文字</button>
-        </div>
-      </div>
-    <!-- PAGE: SETTINGS -->
     <div id="page-settings" class="page">
       <div class="topbar">
         <div><h2>⚙️ 系統設定</h2><div class="topbar-sub">個管師資訊、AI 設定、主題顏色</div></div>
       </div>
-      <div class="content" style="padding:0">
-        <iframe id="settings-iframe" src="settings.html"
-          style="width:100%;height:100%;border:none;flex:1;min-height:0"
-          onload="syncSettingsTheme()">
-        </iframe>
-      </div>
-    </div>
       <div class="content">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:1000px">
-          <div style="display:flex;flex-direction:column;gap:16px">
-
-            <div class="panel">
-              <div class="panel-header"><h3>個案基本資料</h3></div>
-              <div class="panel-body">
-                <div class="form-grid">
-                  <div class="form-group"><label>姓名</label><input type="text" id="rf-name" placeholder="請輸入姓名"></div>
-                  <div class="form-group"><label>性別</label>
-                    <div style="display:flex;gap:16px;align-items:center;padding:9px 0">
-                      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;font-weight:400"><input type="radio" name="rf-gender" value="男"> 男</label>
-                      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;font-weight:400"><input type="radio" name="rf-gender" value="女"> 女</label>
-                    </div>
-                  </div>
-                  <div class="form-group"><label>出生日期（民國）</label>
-                    <div style="display:flex;gap:6px;align-items:center">
-                      <input type="text" id="rf-by" placeholder="年" style="width:54px"> <span style="color:var(--text3)">年</span>
-                      <input type="text" id="rf-bm" placeholder="月" style="width:44px"> <span style="color:var(--text3)">月</span>
-                      <input type="text" id="rf-bd" placeholder="日" style="width:44px"> <span style="color:var(--text3)">日</span>
-                    </div>
-                  </div>
-                  <div class="form-group"><label>身分證字號</label><input type="text" id="rf-idno" placeholder="A123456789"></div>
-                  <div class="form-group full"><label>居住地址</label><input type="text" id="rf-address" placeholder="請輸入地址"></div>
-                </div>
+        <div style="max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:20px;padding-bottom:40px">
+          <div class="panel">
+            <div class="panel-header">👤 個管師資訊</div>
+            <div class="panel-body" style="display:flex;flex-direction:column;gap:14px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div class="form-group"><label>個管師姓名</label><input type="text" id="s-worker-name" placeholder="林侑萱"></div>
+                <div class="form-group"><label>個管師電話</label><input type="text" id="s-worker-phone" placeholder="0902692567"></div>
               </div>
-            </div>
-
-            <div class="panel">
-              <div class="panel-header"><h3>聯絡人資料</h3></div>
-              <div class="panel-body">
-                <div class="form-grid">
-                  <div class="form-group"><label>主要聯絡人姓名</label><input type="text" id="rf-contact" placeholder="姓名"></div>
-                  <div class="form-group"><label>與個案關係</label><input type="text" id="rf-relation" placeholder="如：子、女、配偶"></div>
-                  <div class="form-group full"><label>聯絡電話</label>
-                    <div style="display:flex;gap:12px;align-items:center;margin-bottom:6px">
-                      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;font-weight:400"><input type="checkbox" id="rf-phone-self"> 本人電話</label>
-                      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;font-weight:400"><input type="checkbox" id="rf-phone-contact"> 聯絡人電話</label>
-                    </div>
-                    <input type="text" id="rf-phone" placeholder="電話號碼">
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel">
-              <div class="panel-header"><h3>轉介資訊</h3></div>
-              <div class="panel-body" style="display:flex;flex-direction:column;gap:12px">
-                <div class="form-group"><label>轉介類型</label>
-                  <div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 0">
-                    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="rf-t1"> 醫事/社照C據點</label>
-                    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="rf-t2"> 失智據點</label>
-                    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="rf-t3"> 失智共照中心</label>
-                    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="rf-t4"> 到宅牙醫</label>
-                    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="rf-t5"> 其他</label>
-                  </div>
-                  <input type="text" id="rf-type-other" placeholder="其他類型補充說明…">
-                </div>
-                <div class="form-group"><label>收案單位</label><input type="text" id="rf-unit" placeholder="請填寫收案單位名稱"></div>
-                <div class="form-group"><label>個案概況（近三個月身心、家庭情形）</label>
-                  <textarea id="rf-summary" style="min-height:100px" placeholder="請描述個案近三個月身心、家庭概況…"></textarea>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel">
-              <div class="panel-header"><h3>核章資訊</h3></div>
-              <div class="panel-body">
-                <div class="form-grid">
-                  <div class="form-group"><label>個管師姓名／日期</label><input type="text" id="rf-cm-sign" placeholder="個管師簽名 / 日期"></div>
-                  <div class="form-group"><label>主管姓名／日期</label><input type="text" id="rf-mgr-sign" placeholder="主管簽名 / 日期"></div>
-                  <div class="form-group full"><label>機構聯絡電話</label><input type="text" id="rf-org-phone" placeholder="機構電話"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel">
-              <div class="panel-header"><h3>回覆單（選填）</h3></div>
-              <div class="panel-body" style="display:flex;flex-direction:column;gap:10px">
-                <div style="display:flex;gap:16px;flex-wrap:wrap">
-                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="rf-r1"> 提供服務</label>
-                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:400"><input type="checkbox" id="rf-r2"> 無法提供服務，原因：</label>
-                </div>
-                <input type="text" id="rf-reply-reason" placeholder="無法提供原因…">
-                <div class="form-group"><label>處理情形</label>
-                  <textarea id="rf-reply-detail" style="min-height:60px" placeholder="請填寫處理情形"></textarea>
-                </div>
-                <div class="form-group"><label>收案人員</label><input type="text" id="rf-caseworker" placeholder="收案人員姓名"></div>
-              </div>
-            </div>
-
-          </div>
-
-          <div>
-            <div class="panel" style="position:sticky;top:16px">
-              <div class="panel-header">
-                <h3>轉介單文字輸出</h3>
-                <div style="display:flex;gap:8px">
-                  <button type="button" class="btn btn-secondary btn-sm" onclick="referralCopyOutput()">📋 複製</button>
-                  <button type="button" class="btn btn-secondary btn-sm" onclick="referralPrint()">🖨️ 列印</button>
-                </div>
-              </div>
-              <div class="panel-body">
-                <div id="referral-output" style="background:#fafaf8;border:1px solid var(--border);border-radius:8px;padding:18px;font-size:13px;line-height:2;white-space:pre-wrap;min-height:300px;color:var(--text);font-family:inherit">
-                  <span style="color:var(--text3);font-style:italic">填寫左側表單後點「產生轉介單文字」…</span>
-                </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div class="form-group"><label>所屬機構</label><input type="text" id="s-org-name" placeholder="長照機構名稱"></div>
+                <div class="form-group"><label>服務區域</label><input type="text" id="s-region" placeholder="如：台北市大安區"></div>
               </div>
             </div>
           </div>
-
+          <div class="panel">
+            <div class="panel-header">🤖 AI 設定（Anthropic API）</div>
+            <div class="panel-body" style="display:flex;flex-direction:column;gap:14px">
+              <div class="form-group">
+                <label>Anthropic API Key</label>
+                <input type="password" id="s-api-key" placeholder="sk-ant-api03-...">
+                <div style="font-size:12px;margin-top:4px" id="s-api-key-status2"></div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <button type="button" class="btn btn-secondary" onclick="testApiKey()">🔌 測試連線</button>
+                <span id="s-api-status" style="font-size:12.5px;color:var(--text3)"></span>
+              </div>
+              <hr style="border:none;border-top:1px solid var(--border)">
+              <div class="form-group">
+                <label>Google Apps Script URL（雲端同步）</label>
+                <input type="text" id="s-apps-script-url" placeholder="https://script.google.com/macros/s/...">
+                <div style="font-size:11.5px;color:var(--text3);margin-top:3px">用於與 Google 試算表雙向同步個案資料</div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">🎨 主題顏色</div>
+            <div class="panel-body">
+              <div id="theme-color-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px"></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <button type="button" class="btn btn-primary" onclick="saveSettings()">💾 儲存設定</button>
+            <span id="settings-save-ok" style="font-size:12.5px;color:var(--accent);display:none">✅ 已儲存</span>
+          </div>
         </div>
       </div>
     </div>
-
-  </div>
-</div>
-
 <!-- MODAL: 家訪逾期/本月 -->
 <div class="modal-overlay hidden" id="hv-modal">
   <div class="modal" style="width:480px">
@@ -1115,135 +1016,8 @@
 </div>
 
 
-    <!-- PAGE: REFERRAL -->
-    <div id="page-referral" class="hidden">
-      <div class="topbar">
-        <div><h2>📋 其他服務轉介單</h2><div class="topbar-sub">填寫後點「列印/儲存PDF」輸出</div></div>
-        <div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap;">
-          <select id="ref-case-select" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;min-width:200px;" onchange="referralLoadCase()">
-            <option value="">— 選擇個案帶入 —</option>
-          </select>
-          <button type="button" class="btn btn-secondary" onclick="referralClear()">🔄 清除</button>
-          <button type="button" class="btn btn-primary" onclick="referralPrint()">🖨️ 列印 / 儲存 PDF</button>
-        </div>
-      </div>
-      <div class="content" id="referral-content" style="background:#f5f3ee;">
-        <div style="max-width:760px;margin:0 auto;background:#fff;padding:30px 40px;box-shadow:0 2px 20px rgba(0,0,0,.1);">
-
-          <!-- 標題 -->
-          <div style="text-align:center;margin-bottom:20px;">
-            <div style="font-size:11px;color:#888;text-align:right;margin-bottom:4px;">第一版 1130507 訂</div>
-            <div style="font-size:20px;font-weight:700;color:var(--accent);letter-spacing:2px;margin-bottom:6px;">齡活居家長照機構</div>
-            <h2 style="font-size:22px;font-weight:700;letter-spacing:4px;border-bottom:2px solid #000;padding-bottom:8px;">其他服務轉介單</h2>
-          </div>
-
-          <!-- 主表格 -->
-          <table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px;">
-            <tr>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;width:80px;white-space:nowrap;">姓名</td>
-              <td style="border:1px solid #000;padding:4px 8px;"><input id="rf-name" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="請輸入姓名"></td>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;width:70px;white-space:nowrap;">出生日期</td>
-              <td style="border:1px solid #000;padding:4px 8px;white-space:nowrap;">
-                民國&nbsp;<input id="rf-by" type="text" style="border:none;outline:none;width:34px;font-size:13px;font-family:inherit;" placeholder="年">&nbsp;年&nbsp;<input id="rf-bm" type="text" style="border:none;outline:none;width:26px;font-size:13px;font-family:inherit;" placeholder="月">&nbsp;月&nbsp;<input id="rf-bd" type="text" style="border:none;outline:none;width:26px;font-size:13px;font-family:inherit;" placeholder="日">&nbsp;日
-              </td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">性別</td>
-              <td style="border:1px solid #000;padding:6px 8px;">
-                <label style="margin-right:16px;cursor:pointer;font-size:13px;"><input type="radio" name="rf-gender" value="男" style="margin-right:4px;">男</label>
-                <label style="cursor:pointer;font-size:13px;"><input type="radio" name="rf-gender" value="女" style="margin-right:4px;">女</label>
-              </td>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">身份證字號</td>
-              <td style="border:1px solid #000;padding:4px 8px;"><input id="rf-idno" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="A123456789"></td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">居住地址</td>
-              <td colspan="3" style="border:1px solid #000;padding:4px 8px;"><input id="rf-address" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="請輸入地址"></td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">主要聯絡人</td>
-              <td style="border:1px solid #000;padding:4px 8px;"><input id="rf-contact" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="姓名"></td>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">關係</td>
-              <td style="border:1px solid #000;padding:4px 8px;"><input id="rf-relation" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="如：子、女、配偶"></td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">聯絡電話</td>
-              <td colspan="3" style="border:1px solid #000;padding:6px 8px;">
-                <div style="display:flex;gap:16px;margin-bottom:5px;">
-                  <label style="cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rf-phone-self">本人</label>
-                  <label style="cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rf-phone-contact">主要聯絡人</label>
-                </div>
-                <input id="rf-phone" type="text" style="border:none;border-bottom:1px solid #ccc;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="電話號碼">
-              </td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">轉介類型</td>
-              <td colspan="3" style="border:1px solid #000;padding:8px;">
-                <div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:6px;font-size:13px;">
-                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rf-t1">醫事/社照 C 據點</label>
-                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rf-t2">失智據點</label>
-                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rf-t3">失智共照中心</label>
-                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rf-t4">到宅牙醫</label>
-                  <label style="cursor:pointer;display:flex;align-items:center;gap:4px;"><input type="checkbox" id="rf-t5">其他</label>
-                </div>
-                <input id="rf-type-other" type="text" style="border:none;border-bottom:1px solid #ccc;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="其他類型說明…">
-              </td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;">收案單位</td>
-              <td colspan="3" style="border:1px solid #000;padding:4px 8px;"><input id="rf-unit" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="請填寫收案單位名稱"></td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;vertical-align:top;padding-top:10px;">個案概況</td>
-              <td colspan="3" style="border:1px solid #000;padding:8px;">
-                <div style="font-size:12px;color:#666;margin-bottom:4px;">近三個月個案之身心、家庭概況：</div>
-                <textarea id="rf-summary" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;resize:vertical;min-height:90px;line-height:1.8;" placeholder="請描述個案近三個月身心、家庭概況…"></textarea>
-              </td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;white-space:nowrap;">個管核章/日期</td>
-              <td style="border:1px solid #000;padding:4px 8px;"><input id="rf-cm-sign" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="個管師簽名 / 日期"></td>
-              <td style="border:1px solid #000;padding:6px 10px;background:#f8f8f8;font-weight:600;white-space:nowrap;">主管核章/日期</td>
-              <td style="border:1px solid #000;padding:4px 8px;"><input id="rf-mgr-sign" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="主管簽名 / 日期"></td>
-            </tr>
-          </table>
-
-          <!-- 機構資訊 -->
-          <div style="border:1px solid #000;padding:10px 14px;margin-bottom:20px;font-size:13px;line-height:2;">
-            <div>・<strong>轉介單位：</strong>齡活有限公司附設新北市私立齡活居家長照機構</div>
-            <div>・<strong>聯絡電話：</strong><input id="rf-org-phone" type="text" style="border:none;border-bottom:1px solid #ccc;outline:none;font-size:13px;font-family:inherit;width:160px;" placeholder="機構電話"></div>
-            <div>・<strong>傳真號碼：</strong>02-89650321（若需傳真，傳真前請先致電，謝謝您）</div>
-          </div>
-
-          <!-- 回覆單 -->
-          <div style="border-top:3px double #000;padding-top:20px;">
-            <h3 style="text-align:center;font-size:20px;font-weight:700;letter-spacing:4px;margin-bottom:14px;">回覆單</h3>
-            <table style="width:100%;border-collapse:collapse;font-size:13px;">
-              <tr>
-                <td style="border:1px solid #000;padding:10px 12px;width:70px;font-weight:600;vertical-align:top;">單位回覆：</td>
-                <td style="border:1px solid #000;padding:10px 12px;">
-                  <label style="display:block;margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="rf-r1" style="margin-right:6px;">提供服務</label>
-                  <div style="display:flex;align-items:center;gap:8px;">
-                    <label style="cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;"><input type="checkbox" id="rf-r2">無法提供服務，原因：</label>
-                    <input id="rf-reply-reason" type="text" style="border:none;border-bottom:1px solid #ccc;outline:none;flex:1;font-size:13px;font-family:inherit;" placeholder="請填寫原因">
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td style="border:1px solid #000;padding:10px 12px;font-weight:600;vertical-align:top;">處理情形：</td>
-                <td style="border:1px solid #000;padding:8px 12px;">
-                  <textarea id="rf-reply-detail" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;" placeholder="請填寫處理情形"></textarea>
-                </td>
-              </tr>
-              <tr>
-                <td style="border:1px solid #000;padding:12px;text-align:center;font-weight:600;">收案人員</td>
-                <td style="border:1px solid #000;padding:8px 12px;"><input id="rf-caseworker" type="text" style="border:none;outline:none;width:100%;font-size:13px;font-family:inherit;" placeholder="收案人員姓名"></td>
-              </tr>
-            </table>
-          </div>
-
-        </div>
-      </div>
+    
+      
     </div>
 
 <!-- MODAL: 尚未聯繫 -->
@@ -1492,10 +1266,9 @@ function _showSync(msg,color){
 function _hideSync(delay){setTimeout(function(){if(_syncEl)_syncEl.style.opacity='0';},delay||2000);}
 async function _api(action,body){
   if(!APPS_SCRIPT_URL) throw new Error('請先設定 Apps Script URL');
-  var url=APPS_SCRIPT_URL+'?action='+action;
-  var opts={method:'GET',redirect:'follow'};
-  if(body){opts.method='POST';opts.headers={'Content-Type':'text/plain'};opts.body=JSON.stringify(body);}
-  var res=await fetch(url,opts);
+  var url=APPS_SCRIPT_URL+'?action='+encodeURIComponent(action);
+  if(body){url+='&body='+encodeURIComponent(JSON.stringify(body));}
+  var res=await fetch(url,{redirect:'follow'});
   var json=await res.json();
   if(!json.ok) throw new Error(json.error||'API 錯誤');
   return json.data;
@@ -1504,32 +1277,60 @@ async function initCloudSync(){
   var saved=localStorage.getItem('apps_script_url');
   if(saved) APPS_SCRIPT_URL=saved;
   if(!APPS_SCRIPT_URL) return;
-  _showSync('☁️ 同步中…','#888');
+  _showSync('☁️ 同步個案資料…','#888');
   try{
-    var data=await _api('exportAll');
-    if(data.cases&&data.cases.length>0){localStorage.setItem('cases',JSON.stringify(data.cases));cases=data.cases;}
-    if(data.records&&data.records.length>0){localStorage.setItem('records',JSON.stringify(data.records));records=data.records;}
-    if(data.sentences&&data.sentences.length>0){localStorage.setItem('sentences',JSON.stringify(data.sentences));sentences=data.sentences;}
-    _showSync('☁️ 已同步','#2d6a4f');_hideSync(2500);
+    var data=await _api('getCasesOnly');
+    if(data&&data.cases&&data.cases.length>0){
+      cases=data.cases;
+      localStorage.setItem('cases',JSON.stringify(cases));
+    }
+    if(data&&data.sentences&&data.sentences.length>0){
+      sentences=data.sentences;
+      localStorage.setItem('sentences',JSON.stringify(sentences));
+    }
+    _showSync('☁️ 個案資料已同步','#2d6a4f');_hideSync(2000);
     renderDashboard();
-  }catch(e){_showSync('⚠️ 雲端同步失敗，使用本機資料','#e07b39');_hideSync(4000);console.error('[雲端同步]',e);}
+  }catch(e){
+    _showSync('⚠️ 同步失敗','#e07b39');_hideSync(3000);
+  }
 }
 function saveData(key,val){
   localStorage.setItem(key,JSON.stringify(val));
-  if(!APPS_SCRIPT_URL) return;
-  if(key==='cases'){_showSync('☁️ 儲存中…','#888');_api('importAll',{cases:val}).then(function(){_showSync('☁️ 已儲存','#2d6a4f');_hideSync();}).catch(function(){_showSync('⚠️ 雲端儲存失敗','#e07b39');_hideSync(4000);});}
-  else if(key==='records'){_showSync('☁️ 儲存中…','#888');_api('importAll',{records:val}).then(function(){_showSync('☁️ 已儲存','#2d6a4f');_hideSync();}).catch(function(){_showSync('⚠️ 雲端儲存失敗','#e07b39');_hideSync(4000);});}
-  else if(key==='sentences'){_api('saveAllSentences',{sentences:val}).catch(function(){});}
-  else if(key==='sys_config'){_api('saveConfig',val).catch(function(){});}
+  // 僅存本機，需手動按「同步雲端」才推送
 }
+async function syncToCloud() {
+  if (!APPS_SCRIPT_URL) { alert('請先在設定頁填入 Apps Script URL'); return; }
+  _showSync('☁️ 上傳中…','#888');
+  try {
+    var payload = JSON.stringify({ action:'importAll', cases:cases, records:records, sentences:sentences });
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: payload
+    });
+    _showSync('☁️ 已送出（no-cors）','#2d6a4f'); _hideSync(2500);
+    alert('✅ 資料已送出至雲端（Apps Script CORS 限制，無法確認是否成功，請到試算表確認）');
+  } catch(e) {
+    _showSync('⚠️ 上傳失敗','#e07b39'); _hideSync(4000);
+    alert('❌ 上傳失敗：' + e.message);
+  }
+}
+
 async function forceSyncFromCloud(){
   if(!APPS_SCRIPT_URL){alert('請先在設定頁填入 Apps Script URL');return;}
   _showSync('☁️ 重新同步中…','#888');
   try{
     var data=await _api('exportAll');
-    if(data.cases){localStorage.setItem('cases',JSON.stringify(data.cases));cases=data.cases;}
-    if(data.records){localStorage.setItem('records',JSON.stringify(data.records));records=data.records;}
-    if(data.sentences){localStorage.setItem('sentences',JSON.stringify(data.sentences));sentences=data.sentences;}
+    if(data.cases){cases=data.cases;localStorage.setItem('cases',JSON.stringify(cases));}
+    if(data.records){
+      // 只保留最新各 10 筆電訪 + 10 筆家訪
+      var phoneRecs = data.records.filter(function(r){return r.contactType!=='home';}).slice(0,10);
+      var homeRecs  = data.records.filter(function(r){return r.contactType==='home';}).slice(0,10);
+      records = phoneRecs.concat(homeRecs).sort(function(a,b){return b.date.localeCompare(a.date);});
+      localStorage.setItem('records',JSON.stringify(records));
+    }
+    if(data.sentences){sentences=data.sentences;localStorage.setItem('sentences',JSON.stringify(sentences));}
     _showSync('☁️ 同步完成！','#2d6a4f');_hideSync(2000);renderDashboard();
     alert('✅ 已從雲端重新同步所有資料');
   }catch(e){_showSync('⚠️ 同步失敗','#e07b39');_hideSync(4000);alert('❌ 同步失敗：'+e.message);}
@@ -1556,7 +1357,7 @@ function promptApiKey() {
   updateApiKeyStatus();
 }
 function updateApiKeyStatus() {
-  var el = document.getElementById('api-key-status');
+  var el = document.getElementById('s-api-key-status');
   if (!el) return;
   el.textContent = getApiKey() ? '✅ API Key 已設定' : '⚠️ 尚未設定';
 }
@@ -1731,34 +1532,6 @@ var currentSentenceTab = 'service';
 
 // ========== PAGE NAV ==========
 
-
-function syncSettingsTheme() {
-  // 把目前主題傳給 settings iframe
-  var cfg = loadData('sys_config', {});
-  var iframe = document.getElementById('settings-iframe');
-  if (iframe && iframe.contentWindow && cfg.themeAccent) {
-    try {
-      iframe.contentWindow.postMessage({ type:'applyTheme', accent:cfg.themeAccent, accent2:cfg.themeAccent2 }, '*');
-    } catch(e) {}
-  }
-}
-
-// 接收 settings.html 傳回的訊息
-window.addEventListener('message', function(e) {
-  if (!e.data || !e.data.type) return;
-  if (e.data.type === 'applyTheme') {
-    applyTheme(e.data.accent, e.data.accent2);
-  }
-  if (e.data.type === 'settingsSaved') {
-    var cfg = e.data.config;
-    if (cfg) {
-      // 同步雲端 URL
-      var url = localStorage.getItem('apps_script_url');
-      if (url) APPS_SCRIPT_URL = url;
-    }
-  }
-});
-
 function toggleSidebar() {
   var sb  = document.getElementById('app-sidebar');
   var btn = document.getElementById('sidebar-toggle-btn');
@@ -1770,20 +1543,8 @@ function toggleSidebar() {
 
 var _lastPage = '';
 
-function openSettings() {
-  var w = window.open('settings.html', 'settings', 'width=700,height=750,scrollbars=yes');
-  // 接收設定更新
-  window.addEventListener('message', function(e) {
-    if (e.data && e.data.type === 'settings-saved') {
-      localStorage.setItem('sys_config', JSON.stringify(e.data.cfg));
-      // 更新全域 APPS_SCRIPT_URL
-      APPS_SCRIPT_URL = e.data.cfg.appsScriptUrl || APPS_SCRIPT_URL;
-    }
-  }, { once: true });
-}
-
 function showPage(page) {
-  ['dashboard','generator','records','sentences','homevisit','settings','referral'].forEach(function(p) {
+  ['dashboard','generator','records','sentences','homevisit','settings'].forEach(function(p) {
     var pg = document.getElementById('page-'+p);
     var nv = document.getElementById('nav-'+p);
     if (pg) { pg.classList.remove('active'); pg.classList.add('hidden'); }
@@ -1796,12 +1557,11 @@ function showPage(page) {
   // 每次都更新 dashboard/records；其他頁面只在切換時初始化
   if (page === 'dashboard') renderDashboard();
   else if (page === 'records') renderRecords();
+  else if (page === 'settings') settingsInit();
   else if (page !== _lastPage) {
     if (page === 'generator') initGenerator();
     if (page === 'sentences') renderSentences();
     if (page === 'homevisit') hv2Init();
-    if (page === 'settings') { var f=document.getElementById('settings-iframe'); if(f&&f.contentWindow) try{f.contentWindow.initSettings();}catch(e){} }
-    if (page === 'referral') referralInit();
   }
   _lastPage = page;
 }
@@ -1846,7 +1606,12 @@ function renderDashboard() {
 
   var monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
   var activeCases = currentStatusFilter === '全部' ? cases : cases.filter(c => c.status === currentStatusFilter);
-  var contactedIds = new Set(records.filter(r => r.date.startsWith(monthKey)).map(r => r.caseId));
+  // 從個案基本資料的 lastCallDate/lastHvDate 判斷（不受紀錄數量限制）
+  var contactedIds = new Set(cases.filter(function(c) {
+    var callDate = (c.lastCallDate||'').substring(0,7);
+    var hvDate   = (c.lastHvDate||'').substring(0,7);
+    return callDate === monthKey || hvDate === monthKey;
+  }).map(function(c){ return c.id; }));
   var uncontacted = activeCases.filter(c => !contactedIds.has(c.id));
 
   // Cards
@@ -1884,20 +1649,7 @@ function svcBadges(types) {
   // Table
   var tbody = document.getElementById('dashboard-tbody');
   var dq = (document.getElementById('dashboard-search')?.value || '').toLowerCase();
-  var displayCases = dq ? activeCases.filter(c => c.name.includes(dq) || c.id.toLowerCase().includes(dq)) : activeCases;
-  tbody.innerHTML = displayCases.map(c => {
-    var contacted = contactedIds.has(c.id);
-    var lastRec = records.filter(r=>r.caseId===c.id).sort((a,b)=>b.date.localeCompare(a.date))[0];
-    var lastType = lastRec?.contactType === 'home' ? '🏠 家訪' : lastRec ? '📞 電訪' : '—';
-    return `<tr>
-      <td><span style="font-family:'DM Mono',monospace;font-size:12px">${c.id}</span></td>
-      <td><b>${c.name}</b></td>
-      <td><span class="dot ${contacted?'dot-green':'dot-orange'}"></span>${contacted?'已聯繫（電訪或家訪）':'未聯繫'}</td>
-      <td>${lastRec ? lastRec.date.substring(0,10)+' '+lastType : '—'}</td>
-      <td>${svcBadges(c.serviceTypes)}</td>
-      <td class="flex gap-2"><button type="button" class="btn btn-secondary btn-sm" onclick="genForCase('${c.id}')">✍️ 聯繫</button><button type="button" class="btn btn-secondary btn-sm" onclick="openCaseModal('${c.id}')">✏️</button><button type="button" class="btn btn-secondary btn-sm" style="color:var(--danger)" onclick="deleteCase('${c.id}')">🗑</button></td>
-    </tr>`;
-  }).join('');
+  renderCaseTable();
 }
 
 function openHvModal(type) {
@@ -2008,23 +1760,43 @@ function contactTypeSelect(type) {
 
 // ========== CASES ==========
 function renderCaseTable() {
-  var tbody = document.getElementById('case-tbody');
+  var tbody = document.getElementById('dashboard-tbody');
   if (!tbody) return;
-  var q = (document.getElementById('case-search')?.value || '').toLowerCase();
-  var filtered = cases.filter(c => c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q));
+  var q = ((document.getElementById('dashboard-search') || {}).value || '').toLowerCase();
+  var statusFilter = currentStatusFilter || '全部';
+  var filtered = cases.filter(function(c) {
+    var matchQ = !q || c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q);
+    var matchS = statusFilter === '全部' || c.status === statusFilter;
+    return matchQ && matchS;
+  });
   if (!filtered.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)">尚無個案資料</td></tr>';
     return;
   }
-  tbody.innerHTML = filtered.map(c => `<tr>
-    <td><span style="font-family:'DM Mono',monospace;font-size:12px">${c.id}</span></td>
-    <td><b>${c.name}</b></td>
-    <td>${c.phone||'—'}</td>
-    <td>${svcBadges(c.serviceTypes)}</td>
-    <td>${c.worker||'—'}</td>
-    <td><span class="badge ${c.status==='在案'?'badge-green':c.status==='暫停'?'badge-orange':'badge-gray'}">${c.status}</span></td>
-    <td class="flex gap-2"><button type="button" class="btn btn-secondary btn-sm" onclick="openCaseModal('${c.id}')">✏️ 編輯</button><button type="button" class="btn btn-secondary btn-sm" style="color:var(--danger)" onclick="deleteCase('${c.id}')">🗑</button></td>
-  </tr>`).join('');
+  var monthKey = new Date().toISOString().substring(0,7);
+  var contactedThisMonth = new Set(cases.filter(function(c) {
+    var callDate = (c.lastCallDate||'').substring(0,7);
+    var hvDate   = (c.lastHvDate||'').substring(0,7);
+    return callDate === monthKey || hvDate === monthKey;
+  }).map(function(c){ return c.id; }));
+  // 用 DocumentFragment 減少 reflow
+  var frag = document.createDocumentFragment();
+  filtered.forEach(function(c) {
+    var contacted = contactedThisMonth.has(c.id);
+    var tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
+    tr.onclick = function(){ openCaseModal(c.id); };
+    tr.innerHTML = '<td><span style="font-family:monospace;font-size:12px">' + c.id + '</span></td>'
+      + '<td><b>' + (c.name||'') + '</b></td>'
+      + '<td>' + (c.phone||'') + '</td>'
+      + '<td><span style="font-size:12px;padding:2px 8px;border-radius:12px;background:' + (contacted?'var(--accent-light)':'#fff3cd') + ';color:' + (contacted?'var(--accent)':'#856404') + '">' + (contacted?'✅ 已聯繫':'⏳ 未聯繫') + '</span></td>'
+      + '<td>' + (Array.isArray(c.serviceTypes)?c.serviceTypes.join('、'):(c.serviceTypes||'')) + '</td>'
+      + '<td><span style="font-size:12px;padding:2px 8px;border-radius:12px;background:var(--surface2)">' + (c.status||'在案') + '</span></td>'
+      + '<td style="display:flex;gap:4px"><button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openCaseModal(\'' + c.id + '\')">編輯</button></td>';
+    frag.appendChild(tr);
+  });
+  tbody.innerHTML = '';
+  tbody.appendChild(frag);
 }
 
 function renderServiceTypeCheckboxes(selected) {
@@ -2728,7 +2500,23 @@ function saveRecord() {
   };
   records.unshift(rec);
   saveData('records', records);
-  if (APPS_SCRIPT_URL) { _api('saveRecord', rec).catch(function(){}); }
+  // 更新個案的最後電訪日
+  var cIdx = cases.findIndex(function(x){ return x.id===caseId; });
+  if (cIdx >= 0) {
+    var genDateEl = document.getElementById('gen-date');
+    cases[cIdx].lastCallDate = genDateEl ? genDateEl.value : new Date().toISOString().substring(0,10);
+    saveData('cases', cases);
+  }
+  // 即時上傳這一筆紀錄 + 更新個案基本資料
+  if (APPS_SCRIPT_URL) {
+    _showSync('☁️ 上傳中…','#888');
+    fetch(APPS_SCRIPT_URL, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ action:'saveNewRecord', record:rec, updateCase: cIdx>=0 ? cases[cIdx] : null })
+    }).then(function(){ _showSync('☁️ 已上傳','#2d6a4f'); _hideSync(2000); })
+      .catch(function(){ _showSync('⚠️ 上傳失敗','#e07b39'); _hideSync(3000); });
+  }
   alert('✅ 已儲存電訪紀錄');
   // 清除表單，準備下一位個案
   document.getElementById('gen-output').value = '';
@@ -4127,25 +3915,41 @@ function hv2RenderSvc1() {
   list.innerHTML = '';
   hv2SvcItems.forEach(function(item, i) {
     var row = document.createElement('div');
-    row.style.cssText = 'display:grid;grid-template-columns:120px 1fr 80px auto;gap:6px;align-items:center';
+    row.style.cssText = 'display:grid;grid-template-columns:140px 1fr 120px auto;gap:6px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px';
     // 代碼選擇
     var sel = document.createElement('select');
     sel.style.fontSize = '12px';
     sel.innerHTML = '<option value="">選擇代碼</option>' + HV2_SVC_CODES.map(function(s){ return '<option value="' + s.code + '" ' + (item.code===s.code?'selected':'') + '>' + s.code + '　' + s.name + '</option>'; }).join('');
-    sel.onchange = (function(idx){ return function(){ hv2SvcItems[idx].code = this.value; var n = HV2_SVC_CODES.find(function(s){ return s.code===this.value; },this); hv2SvcItems[idx].name = n?n.name:''; }; })(i);
+    sel.onchange = (function(idx){ return function() {
+      var code = this.value;
+      var n = HV2_SVC_CODES.find(function(s){ return s.code===code; });
+      hv2SvcItems[idx].code = code;
+      hv2SvcItems[idx].name = n ? n.name : '';
+      // 更新單位顯示（不自動填入，讓使用者輸入數字即可）
+      var unitsEl = this.parentElement.querySelector('.svc-units-input');
+      if (unitsEl) unitsEl.placeholder = '數量（單位/月）';
+    }; })(i);
     // 備註
     var note = document.createElement('input');
-    note.type='text'; note.placeholder='說明（選填）'; note.value=item.note||''; note.style.fontSize='12px';
+    note.type='text'; note.placeholder='說明（選填）'; note.value=item.note||'';
+    note.style.cssText='font-size:12px;flex:1';
     note.oninput = (function(idx){ return function(){ hv2SvcItems[idx].note = this.value; }; })(i);
-    // 單位
-    var units = document.createElement('input');
-    units.type='text'; units.placeholder='*XX單位'; units.value=item.units||''; units.style.fontSize='12px';
-    units.oninput = (function(idx){ return function(){ hv2SvcItems[idx].units = this.value; }; })(i);
+    // 單位：數字 spinner + 「單位/月」標籤
+    var unitsWrap = document.createElement('div');
+    unitsWrap.style.cssText='display:flex;align-items:center;gap:4px';
+    var unitsNum = document.createElement('input');
+    unitsNum.type='number'; unitsNum.min='1'; unitsNum.className='svc-units-input';
+    unitsNum.placeholder='數量'; unitsNum.style.cssText='width:55px;font-size:12px';
+    unitsNum.value = item.units||'';
+    unitsNum.oninput = (function(idx){ return function(){ hv2SvcItems[idx].units = this.value; }; })(i);
+    var unitsLabel = document.createElement('span');
+    unitsLabel.textContent='單位/月'; unitsLabel.style.cssText='font-size:11px;color:var(--text3);white-space:nowrap';
+    unitsWrap.appendChild(unitsNum); unitsWrap.appendChild(unitsLabel);
     // 刪除
     var del = document.createElement('button');
-    del.type='button'; del.textContent='×'; del.style.cssText='background:none;border:none;cursor:pointer;color:var(--danger);font-size:16px';
+    del.type='button'; del.textContent='×'; del.style.cssText='background:none;border:none;cursor:pointer;color:var(--danger);font-size:16px;padding:0 4px';
     del.onclick = (function(idx){ return function(){ hv2SvcItems.splice(idx,1); hv2RenderSvc1(); }; })(i);
-    row.appendChild(sel); row.appendChild(note); row.appendChild(units); row.appendChild(del);
+    row.appendChild(sel); row.appendChild(note); row.appendChild(unitsWrap); row.appendChild(del);
     list.appendChild(row);
   });
 }
@@ -4390,7 +4194,7 @@ async function hv2Generate() {
   } else { respiteText = '暫無需求。'; }
 
   // 服務清單
-  var svc1Text = data['hv2-svc2-noneed'] ? '暫無需求。' : hv2SvcItems.filter(function(s){ return s.code; }).map(function(s){ return s.code+'['+s.name+']'+(s.units?'*'+s.units+'/月':'')+(s.note?'（'+s.note+'）':''); }).join('、') || '（待填）';
+  var svc1Text = hv2SvcItems.filter(function(s){ return s.code; }).map(function(s){ return s.code+'['+s.name+']'+(s.units?'*'+s.units+'單位/月':'')+(s.note?'（'+s.note+'）':''); }).join('、') || '（待填）';
   var svc2Text = data['hv2-svc2-noneed'] ? '暫無需求。' : ('1,840元/月，至'+(data['hv2-transport-hospital']||'（待填）'));
   var svc3Text = data['hv2-svc3-noneed'] ? '暫無需求。' : '（待填）';
   var svc5Text = data['hv2-svc5-noneed'] ? '暫無。' : (data['hv2-referral']||'暫無。');
@@ -4529,8 +4333,43 @@ function hv2SaveRecord() {
   };
   records.unshift(rec);
   saveData('records', records);
+  // 更新個案的最後家訪日
+  var cIdx2 = cases.findIndex(function(x){ return x.id===caseId; });
+  if (cIdx2 >= 0) {
+    var hv2DateEl = document.getElementById('hv2-date');
+    cases[cIdx2].lastHvDate = hv2DateEl ? hv2DateEl.value : new Date().toISOString().substring(0,10);
+    saveData('cases', cases);
+  }
+  // 即時上傳這一筆家訪紀錄 + 更新個案基本資料（目標在後面抽取後一起送）
+  // 從輸出文字抽取短中長期目標，同步更新個案資料
+  (function() {
+    var cIdx = cases.findIndex(function(x){ return x.id===caseId; });
+    if (cIdx < 0) return;
+    var extractGoal = function(label) {
+      var m = text.match(new RegExp(label + '[：:]\\s*([^\\n]{5,150})'));
+      return m ? m[1].trim() : '';
+    };
+    var sg = extractGoal('[1１一][\.．]?\\s*短期目標');
+    var mg = extractGoal('[2２二][\.．]?\\s*中期目標');
+    var lg = extractGoal('[3３三][\.．]?\\s*長期目標');
+    if (sg) cases[cIdx].shortGoal = sg;
+    if (mg) cases[cIdx].midGoal   = mg;
+    if (lg) cases[cIdx].longGoal  = lg;
+    if (sg || mg || lg) {
+      cases[cIdx].goalUpdated = new Date().toISOString().substring(0,10);
+      saveData('cases', cases);
+    }
+  })();
+  // 即時上傳這一筆紀錄 + 更新個案基本資料
   if (APPS_SCRIPT_URL) {
-    _api('saveRecord', rec).catch(function(){});
+    var uploadCase = cases.find(function(x){ return x.id===caseId; });
+    _showSync('☁️ 上傳中…','#888');
+    fetch(APPS_SCRIPT_URL, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ action:'saveNewRecord', record:rec, updateCase: uploadCase || null })
+    }).then(function(){ _showSync('☁️ 已上傳','#2d6a4f'); _hideSync(2000); })
+      .catch(function(){ _showSync('⚠️ 上傳失敗','#e07b39'); _hideSync(3000); });
   }
   alert('✅ 已儲存家訪記錄');
   // 清除表單
@@ -4539,6 +4378,8 @@ function hv2SaveRecord() {
   var ns = document.getElementById('hv2-name-search');
   if (ns) ns.value = '';
 }
+
+function hvImportMobileConfirm() { document.getElementById("import-mobile-modal").classList.add("hidden"); }
 
 function hv2SaveDraft() {
   var data = hv2CollectFormData();
@@ -5456,13 +5297,6 @@ function cleanupOldRecords() {
 
 
 // ========== REFERRAL ==========
-function referralInit() {
-  var sel = document.getElementById('ref-case-select');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">— 選擇個案帶入 —</option>' +
-    cases.filter(function(c){ return c.status!=='結案'; })
-    .map(function(c){ return '<option value="'+c.id+'">'+c.id+' '+c.name+'</option>'; }).join('');
-}
 function referralLoadCase() {
   var id = document.getElementById('ref-case-select').value;
   if (!id) return;
@@ -5485,98 +5319,10 @@ function referralLoadCase() {
   if(c.note)      sum.push(c.note);
   rfSet('rf-summary',sum.join('\n').trim());
 }
-function referralClear() {
-  if(!confirm('確定清除所有填寫內容？')) return;
-  ['rf-name','rf-by','rf-bm','rf-bd','rf-idno','rf-address','rf-contact','rf-relation',
-   'rf-phone','rf-type-other','rf-unit','rf-summary','rf-cm-sign','rf-mgr-sign',
-   'rf-org-phone','rf-reply-reason','rf-reply-detail','rf-caseworker'].forEach(function(id){
-    var el=document.getElementById(id); if(el) el.value='';
-  });
-  ['rf-phone-self','rf-phone-contact','rf-t1','rf-t2','rf-t3','rf-t4','rf-t5','rf-r1','rf-r2'].forEach(function(id){
-    var el=document.getElementById(id); if(el) el.checked=false;
-  });
-  document.querySelectorAll('input[name="rf-gender"]').forEach(function(el){ el.checked=false; });
-  document.getElementById('ref-case-select').value='';
-  var out=document.getElementById('referral-output');
-  if(out) out.innerHTML='<span style="color:var(--text3);font-style:italic">填寫左側表單後點「產生轉介單文字」…</span>';
-}
-function referralGenerate() {
-  var name=document.getElementById('rf-name').value.trim();
-  var gender=(document.querySelector('input[name="rf-gender"]:checked')||{}).value||'';
-  var by=document.getElementById('rf-by').value.trim();
-  var bm=document.getElementById('rf-bm').value.trim();
-  var bd=document.getElementById('rf-bd').value.trim();
-  var bday=(by||bm||bd)?'民國'+by+'年'+bm+'月'+bd+'日':'';
-  var idno=document.getElementById('rf-idno').value.trim();
-  var address=document.getElementById('rf-address').value.trim();
-  var contact=document.getElementById('rf-contact').value.trim();
-  var relation=document.getElementById('rf-relation').value.trim();
-  var phoneSelf=document.getElementById('rf-phone-self').checked;
-  var phoneContact=document.getElementById('rf-phone-contact').checked;
-  var phone=document.getElementById('rf-phone').value.trim();
-  var phoneWho=[phoneSelf?'本人':'',phoneContact?'聯絡人':''].filter(Boolean).join('／');
-  var tLabels=['醫事/社照C據點','失智據點','失智共照中心','到宅牙醫','其他'];
-  var types=['rf-t1','rf-t2','rf-t3','rf-t4','rf-t5'].reduce(function(a,id,i){
-    if(document.getElementById(id).checked) a.push(tLabels[i]); return a;},[]);
-  var tOther=document.getElementById('rf-type-other').value.trim();
-  if(tOther) types.push(tOther);
-  var unit=document.getElementById('rf-unit').value.trim();
-  var summary=document.getElementById('rf-summary').value.trim();
-  var cmSign=document.getElementById('rf-cm-sign').value.trim();
-  var mgrSign=document.getElementById('rf-mgr-sign').value.trim();
-  var orgPhone=document.getElementById('rf-org-phone').value.trim();
-  var r1=document.getElementById('rf-r1').checked;
-  var r2=document.getElementById('rf-r2').checked;
-  var rReason=document.getElementById('rf-reply-reason').value.trim();
-  var rDetail=document.getElementById('rf-reply-detail').value.trim();
-  var cworker=document.getElementById('rf-caseworker').value.trim();
-  var L=[];
-  L.push('【齡活居家長照機構　其他服務轉介單】');
-  L.push('');
-  L.push('▌ 個案基本資料');
-  L.push('姓　　名：'+(name||'—')+'　　性別：'+(gender||'—'));
-  L.push('出生日期：'+(bday||'—'));
-  L.push('身分證號：'+(idno||'—'));
-  L.push('居住地址：'+(address||'—'));
-  L.push('');
-  L.push('▌ 聯絡人資料');
-  L.push('主要聯絡人：'+(contact||'—')+'　關係：'+(relation||'—'));
-  L.push('聯絡電話：'+(phone||'—')+(phoneWho?'（'+phoneWho+'）':''));
-  L.push('');
-  L.push('▌ 轉介資訊');
-  L.push('轉介類型：'+(types.length?types.join('、'):'—'));
-  L.push('收案單位：'+(unit||'—'));
-  L.push('');
-  L.push('▌ 個案概況（近三個月身心、家庭情形）');
-  L.push(summary||'—');
-  L.push('');
-  L.push('▌ 核章');
-  L.push('個管師：'+(cmSign||'—')+'　　主管：'+(mgrSign||'—'));
-  L.push('轉介單位：齡活有限公司附設新北市私立齡活居家長照機構');
-  if(orgPhone) L.push('聯絡電話：'+orgPhone);
-  L.push('傳　　真：02-89650321');
-  if(r1||r2||rDetail||cworker){
-    L.push(''); L.push('────────────────────');
-    L.push('▌ 回覆單');
-    if(r1) L.push('□ 提供服務');
-    if(r2) L.push('□ 無法提供服務，原因：'+(rReason||'—'));
-    if(rDetail) L.push('處理情形：'+rDetail);
-    if(cworker) L.push('收案人員：'+cworker);
-  }
-  document.getElementById('referral-output').textContent=L.join('\n');
-}
 function referralCopyOutput() {
   var text=document.getElementById('referral-output').textContent;
   if(!text||text.includes('填寫左側')){alert('請先產生轉介單文字');return;}
   navigator.clipboard.writeText(text).then(function(){alert('✅ 已複製到剪貼簿');});
-}
-function referralPrint() {
-  var style=document.createElement('style');
-  style.id='print-override';
-  style.textContent='@media print{.sidebar,.topbar{display:none!important;}body{background:#fff!important;}}';
-  document.head.appendChild(style);
-  window.print();
-  setTimeout(function(){var s=document.getElementById('print-override');if(s)s.remove();},1000);
 }
 var THEME_PRESETS = [
   { name:'森林綠', accent:'#2d5a27', accent2:'#4a9040' },
@@ -5620,13 +5366,10 @@ function saveSettings() {
   var _uInp=document.getElementById('s-apps-script-url');if(_uInp&&_uInp.value.trim()){APPS_SCRIPT_URL=_uInp.value.trim();localStorage.setItem('apps_script_url',APPS_SCRIPT_URL);}
   var key = document.getElementById('s-api-key').value.trim();
   if (key) localStorage.setItem('anthropic_api_key', key);
-  // apply worker name to home visit fields
-  var hn = document.getElementById('hv-worker-name');
-  var hp = document.getElementById('hv-worker-phone');
-  if (hn && cfg.workerName)  hn.value = cfg.workerName;
-  if (hp && cfg.workerPhone) hp.value = cfg.workerPhone;
+
   updateApiKeyStatus();
-  alert('✅ 設定已儲存');
+  var st = document.getElementById('settings-save-ok');
+  if (st) { st.style.display = 'inline'; setTimeout(function(){ st.style.display = 'none'; }, 2500); }
 }
 
 function getSysConfig() {
