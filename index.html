@@ -372,7 +372,7 @@
           </div>
           <div class="panel-body">
             <div class="table-wrap"><table id="dashboard-table">
-              <thead><tr><th>案號</th><th>姓名</th><th>本月聯繫</th><th>最後電訪</th><th>服務類型</th><th>操作</th></tr></thead>
+              <thead><tr><th>案號</th><th>姓名</th><th>電話</th><th>本月聯繫</th><th>服務類型</th><th>狀態</th><th>操作</th></tr></thead>
               <tbody id="dashboard-tbody"></tbody>
             </table></div>
           </div>
@@ -410,6 +410,7 @@
                       <option value="">— 選擇 —</option>
                     </select>
                     <input type="text" id="gen-contact-person-custom" placeholder="手動輸入姓名" style="margin-top:6px;display:none">
+                    <input type="text" id="gen-contact-phone" placeholder="聯絡電話（選填）" style="margin-top:6px" title="電話號碼，儲存紀錄時可更新至個案資料">
                   </div>
                   <div class="form-group">
                     <label>電訪日期</label>
@@ -1067,6 +1068,28 @@
 
 
 
+<!-- MODAL: 更新聯繫資料 -->
+<div class="modal-overlay hidden" id="contact-update-modal">
+  <div class="modal" style="width:440px">
+    <div class="modal-header">
+      <h3>📱 更新聯繫資料</h3>
+      <button type="button" class="close-btn" onclick="document.getElementById('contact-update-modal').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="contact-update-msg" style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6;background:var(--accent-light);border-radius:8px;padding:10px 14px"></div>
+      <div class="form-grid">
+        <div class="form-group"><label>姓名 *</label><input type="text" id="cu-name" placeholder="聯繫人姓名"></div>
+        <div class="form-group"><label>關係</label><input type="text" id="cu-relation" placeholder="如：案妻、案子"></div>
+        <div class="form-group full"><label>電話</label><input type="text" id="cu-phone" placeholder="電話號碼"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="document.getElementById('contact-update-modal').classList.add('hidden')">略過</button>
+      <button type="button" class="btn btn-primary" onclick="saveContactUpdate()">💾 儲存至個案資料</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: 草稿列表 -->
 <div class="modal-overlay hidden" id="draft-modal">
   <div class="modal" style="width:480px">
@@ -1345,7 +1368,7 @@ function loadData(key, def) {
 
 var SERVICE_TYPES = ['居家照顧','日間照顧','家庭托顧','交通車服務','喘息服務'];
 
-function getApiKey() { return localStorage.getItem('anthropic_api_key') || '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'; }
+function getApiKey() { return localStorage.getItem('anthropic_api_key') || ''; }
 function promptApiKey() {
   var current = getApiKey();
   var key = window.prompt('請輸入 Google Gemini API Key（AIza 開頭）：', current || '');
@@ -1792,7 +1815,7 @@ function renderCaseTable() {
       + '<td><span style="font-size:12px;padding:2px 8px;border-radius:12px;background:' + (contacted?'var(--accent-light)':'#fff3cd') + ';color:' + (contacted?'var(--accent)':'#856404') + '">' + (contacted?'✅ 已聯繫':'⏳ 未聯繫') + '</span></td>'
       + '<td>' + (Array.isArray(c.serviceTypes)?c.serviceTypes.join('、'):(c.serviceTypes||'')) + '</td>'
       + '<td><span style="font-size:12px;padding:2px 8px;border-radius:12px;background:var(--surface2)">' + (c.status||'在案') + '</span></td>'
-      + '<td style="display:flex;gap:4px"><button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openCaseModal(\'' + c.id + '\')">編輯</button></td>';
+      + '<td style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();genForCase(\'' + c.id + '\')">✍️ 聯繫</button><button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openCaseModal(\'' + c.id + '\')">編輯</button></td>';
     frag.appendChild(tr);
   });
   tbody.innerHTML = '';
@@ -5442,8 +5465,11 @@ async function testApiKey() {
       body: JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:10,messages:[{role:'user',content:'hi'}]})
     });
     var d = await res.json();
-    if (d.content) { el.textContent = '✅ 連線成功！API Key 有效'; el.style.color = 'var(--accent)'; }
-    else { el.textContent = '❌ ' + (d.error?.message || '連線失敗'); el.style.color = 'var(--danger)'; }
+    if (d.content) {
+      el.textContent = '✅ 連線成功！API Key 有效';
+      el.style.color = 'var(--accent)';
+      localStorage.setItem('anthropic_api_key', key);
+    } else { el.textContent = '❌ ' + (d.error?.message || '連線失敗'); el.style.color = 'var(--danger)'; }
   } catch(err) { el.textContent = '❌ 連線錯誤：' + err.message; el.style.color = 'var(--danger)'; }
 }
 
@@ -5465,7 +5491,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // ── 關閉所有 Modal（點外部或按 ESC）──
 function closeAllModals() {
   ['contact-type-modal','case-modal','record-modal','sentence-modal',
-   'draft-modal','uncontacted-modal','import-mobile-modal','hv-modal'].forEach(function(id) {
+   'draft-modal','uncontacted-modal','import-mobile-modal','hv-modal','contact-update-modal'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   });
