@@ -12,7 +12,7 @@ const ASSESSMENT_FIELDS = [
   { key: 'shortTermGoal', label: '短期目標', placeholder: '預計3個月內達成的目標...' },
   { key: 'midTermGoal', label: '中期目標', placeholder: '預計6個月內達成的目標...' },
   { key: 'longTermGoal', label: '長期目標', placeholder: '長期照顧目標...' },
-  { key: 'formalCareService', label: '照顧及專業服務', placeholder: '目前使用的正式照顧服務（居家服務、日照等）...' },
+  { key: 'formalCareService', label: '照顧及專業服務', placeholder: '例：居家服務 ＿＿單位/月、日照服務 ＿＿單位/月...' },
   { key: 'transportService', label: '交通接送服務', placeholder: '例：1840元/月，至台北馬偕醫院，或「暫無需求」' },
   { key: 'assistiveDevice', label: '輔具及居家無障礙', placeholder: '輔具需求或居家環境改善需求，或「暫無需求」' },
   { key: 'respiteService', label: '喘息服務', placeholder: '喘息服務使用狀況及剩餘額度...' },
@@ -59,7 +59,7 @@ ${Object.entries(assessment).filter(([, v]) => v.trim()).map(([k, v]) => {
 2.中期目標：${assessment.midTermGoal || '（根據評估填寫）'}
 3.長期目標：${assessment.longTermGoal || '（根據評估填寫）'}
 
-一、照顧及專業服務：${assessment.formalCareService || '（根據服務使用情形填寫）'}
+一、照顧及專業服務：${assessment.formalCareService || '（請列出各項服務，每項格式為「服務名稱 ＿＿單位/月」）'}（每項服務請使用「服務名稱 ＿＿單位/月」格式呈現，例如：居家服務 ＿＿單位/月）
 二、交通接送服務：${assessment.transportService || '暫無需求。'}
 三、輔具及居家無障礙環境改善服務：${assessment.assistiveDevice || '暫無需求。'}
 四、喘息服務/短照服務：${assessment.respiteService || '（根據喘息使用情形填寫）'}
