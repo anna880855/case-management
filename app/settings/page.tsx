@@ -1,15 +1,23 @@
 'use client'
 import { useState } from 'react'
-import { useStore } from '@/lib/store'
+import { useStore, DEFAULT_SENTENCES } from '@/lib/store'
 
 export default function SettingsPage() {
-  const { settings, updateSettings, sentences, addSentence, deleteSentence } = useStore()
+  const { settings, updateSettings, sentences, addSentence, deleteSentence, setSentences } = useStore()
   const [saved, setSaved] = useState(false)
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState('')
   const [newSentence, setNewSentence] = useState({ category: '', text: '' })
+  const [resetDone, setResetDone] = useState(false)
 
   const categories = Array.from(new Set(sentences.map(s => s.category)))
+
+  const handleResetSentences = () => {
+    const custom = sentences.filter(s => !/^s\d+$/.test(s.id))
+    setSentences([...DEFAULT_SENTENCES, ...custom])
+    setResetDone(true)
+    setTimeout(() => setResetDone(false), 3000)
+  }
 
   const handleSave = () => {
     setSaved(true)
@@ -151,7 +159,19 @@ export default function SettingsPage() {
 
       {/* Sentence Management */}
       <div className="bg-white rounded-xl border border-gray-100 p-6">
-        <h3 className="font-semibold text-gray-700 mb-4">電訪句型管理</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-gray-700">電訪句型管理</h3>
+          <button
+            onClick={handleResetSentences}
+            className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+              resetDone
+                ? 'bg-green-100 text-green-700 border-green-200'
+                : 'text-gray-500 border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            {resetDone ? '✓ 已重設' : '重設預設句型庫'}
+          </button>
+        </div>
 
         <div className="bg-gray-50 rounded-lg p-4 mb-4">
           <p className="text-sm font-medium text-gray-600 mb-2">新增句型</p>
