@@ -9,7 +9,7 @@ export default function SettingsPage() {
   const [testResult, setTestResult] = useState('')
   const [newSentence, setNewSentence] = useState({ category: '', text: '' })
 
-  const categories = [...new Set(sentences.map(s => s.category))]
+  const categories = Array.from(new Set(sentences.map(s => s.category)))
 
   const handleSave = () => {
     setSaved(true)
