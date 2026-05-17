@@ -1,17 +1,32 @@
 'use client'
-import { useState, useMemo, Suspense } from 'react'
+import { useState, useMemo, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useStore } from '@/lib/store'
 import type { Case, Sentence } from '@/lib/types'
 
-function buildPrompt(c: Case, sentences: string[], target: string, customNote: string, date: string, managerName: string): string {
-  return `你是一位專業的個案管理師（${managerName}），請根據以下資訊產生一份正式的電訪紀錄，使用繁體中文，語氣專業具體。
+const CATEGORIES = ['service', 'physical', 'family', 'plan'] as const
+type PhoneCategory = typeof CATEGORIES[number]
+const CATEGORY_LABELS: Record<PhoneCategory, string> = {
+  service: '服務使用',
+  physical: '身心狀況',
+  family: '家屬照顧',
+  plan: '計畫需求',
+}
+
+function buildPrompt(
+  c: Case,
+  pickedSentences: { category: string; text: string }[],
+  customNote: string,
+  target: string,
+  date: string,
+  managerName: string
+): string {
+  const sentenceBlock = pickedSentences.map(s => `【${s.category}】${s.text}`).join('\n')
+  return `你是一位專業的個案管理師（${managerName}），請根據以下資訊產生一份正式的電訪紀錄，使用繁體中文，語氣專業具體，150-250字。
 
 個案資料：
 - 姓名：${c.name}
-- 個案編號：${c.caseNumber || ''}
 - 照顧等級：${c.careLevel || ''}
-- 失能狀況：${c.disability || ''}
 - 目前服務：${c.services?.join('、') || ''}
 - 主要照顧者：${c.guardian || ''}
 
@@ -19,39 +34,74 @@ function buildPrompt(c: Case, sentences: string[], target: string, customNote: s
 電訪對象：${target || c.guardian || c.name}
 電訪人員：${managerName}
 
-本次電訪重點：
-${sentences.length > 0 ? sentences.map(s => `- ${s}`).join('\n') : '- 例行追蹤確認'}
-${customNote ? `\n補充說明：${customNote}` : ''}
+本次電訪重點（請融入以下各項內容，改寫為流暢的第三人稱段落，不要分條列項）：
+${sentenceBlock}
+${customNote ? `\n補充說明（請一併融入）：${customNote}` : ''}
 
-請依照以下固定格式產生電訪紀錄（直接輸出格式內容，不要加任何說明文字）：
+請依照以下固定格式輸出（直接輸出，不要加任何說明文字）：
 
 一、電訪日期：${date}
 二、電訪對象：${target || c.guardian || c.name}
 三、訪談內容：
-（請用150-250字流暢敘述電訪過程，融入上述重點，以第三人稱書寫，不使用條列式）
+（150-250字流暢段落）
 
 一、照顧及專業服務：（根據情況填寫，如無異動則寫「服務穩定無須異動。」）
-二、交通接送服務：（根據情況填寫，如無新增則寫「暫無新增照會。」）
-三、輔具及居家無障礙環境改善：（根據情況填寫，如無需求則寫「無新增需求。」）
-四、喘息服務：（根據情況填寫，如無需求則寫「與案家屬確認暫無需求。」）
-五、轉介其他資源：（根據情況填寫，如無則寫「無轉介。」）`
+二、交通接送服務：（如無新增則寫「暫無新增照會。」）
+三、輔具及居家無障礙環境改善：（如無需求則寫「無新增需求。」）
+四、喘息服務：（如無需求則寫「與案家屬確認暫無需求。」）
+五、轉介其他資源：（如無則寫「無轉介。」）`
 }
 
 function PhoneVisitContent() {
   const searchParams = useSearchParams()
   const { cases, sentences, settings, addPhoneVisit, getPhoneVisitsByCase } = useStore()
 
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
   const activeCases = cases.filter(c => c.status !== 'closed')
   const [selectedCaseId, setSelectedCaseId] = useState(searchParams.get('caseId') || '')
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  const now = new Date()
+  const [date, setDate] = useState(now.toISOString().split('T')[0])
+  const [time, setTime] = useState(now.toTimeString().slice(0, 5))
   const [target, setTarget] = useState('')
-  const [selectedSentences, setSelectedSentences] = useState<string[]>([])
   const [customNote, setCustomNote] = useState('')
   const [generating, setGenerating] = useState(false)
   const [generated, setGenerated] = useState('')
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
   const [caseSearch, setCaseSearch] = useState('')
+  const [picked, setPicked] = useState<Record<string, string>>({})
+
+  const pickRandom = (pool: Sentence[], exclude?: string) => {
+    const others = exclude ? pool.filter(s => s.text !== exclude) : pool
+    const arr = others.length > 0 ? others : pool
+    return arr[Math.floor(Math.random() * arr.length)]?.text || ''
+  }
+
+  const autoSelect = (caseObj?: Case) => {
+    const newPicked: Record<string, string> = {}
+    for (const cat of CATEGORIES) {
+      const pool = sentences.filter(s => s.category === cat)
+      if (cat === 'service' && caseObj?.services?.length) {
+        const relevant = pool.filter(s =>
+          caseObj.services.some(svc => s.text.includes(svc))
+        )
+        newPicked[cat] = pickRandom(relevant.length > 0 ? relevant : pool)
+      } else {
+        newPicked[cat] = pickRandom(pool)
+      }
+    }
+    setPicked(newPicked)
+  }
+
+  // Auto-pick on mount once sentences are loaded
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!mounted || sentences.length === 0) return
+    if (Object.keys(picked).length > 0) return
+    autoSelect()
+  }, [mounted, sentences])
 
   const selectedCase = cases.find(c => c.id === selectedCaseId)
   const recentVisits = selectedCaseId ? getPhoneVisitsByCase(selectedCaseId).slice(0, 2) : []
@@ -64,24 +114,54 @@ function PhoneVisitContent() {
     )
   }, [activeCases, caseSearch])
 
-  const sentencesByCategory = useMemo(() => {
-    const cats: Record<string, Sentence[]> = {}
-    sentences.forEach(s => {
-      if (!cats[s.category]) cats[s.category] = []
-      cats[s.category].push(s)
-    })
-    return cats
-  }, [sentences])
+  const hasSentences = CATEGORIES.some(cat => sentences.some(s => s.category === cat))
 
-  const toggleSentence = (text: string) => {
-    setSelectedSentences(prev =>
-      prev.includes(text) ? prev.filter(s => s !== text) : [...prev, text]
-    )
+  const swapOne = (cat: string) => {
+    const pool = sentences.filter(s => s.category === cat)
+    setPicked(prev => ({ ...prev, [cat]: pickRandom(pool, prev[cat]) }))
+  }
+
+  const handleSelectCase = (id: string) => {
+    const c = cases.find(x => x.id === id)
+    setSelectedCaseId(id)
+    setCaseSearch('')
+    setGenerated('')
+    setSaved(false)
+    autoSelect(c)
+  }
+
+  const pickedSentences = CATEGORIES
+    .filter(cat => picked[cat])
+    .map(cat => ({ category: CATEGORY_LABELS[cat], text: picked[cat] }))
+
+  const handleQuickCombine = () => {
+    if (!selectedCase) { setError('請選擇個案'); return }
+    if (pickedSentences.length === 0) { setError('句型庫為空，請先到「設定」頁面按「重設預設句型庫」'); return }
+    const d = new Date(date)
+    const year = d.getFullYear() - 1911
+    const month = d.getMonth() + 1
+    const day = d.getDate()
+    const visitTarget = target || selectedCase.guardian || selectedCase.name
+    const content = pickedSentences.map(s => s.text).join(pickedSentences.length > 1 ? '　' : '')
+    const result = `一、電訪日期：民國${year}年${month}月${day}日 ${time}
+二、電訪對象：${visitTarget}
+三、訪談內容：
+${content}${customNote ? `　${customNote}` : ''}
+
+一、照顧及專業服務：服務穩定無須異動。
+二、交通接送服務：暫無新增照會。
+三、輔具及居家無障礙環境改善：無新增需求。
+四、喘息服務：與案家屬確認暫無需求。
+五、轉介其他資源：無轉介。`
+    setGenerated(result)
+    setSaved(false)
+    setError('')
   }
 
   const handleGenerate = async () => {
     if (!selectedCase) { setError('請選擇個案'); return }
     if (!settings.claudeApiKey) { setError('請先在「設定」頁面填入 Claude API Key'); return }
+    if (pickedSentences.length === 0) { setError('句型庫為空，請先到「設定」頁面新增電訪句型'); return }
     setGenerating(true)
     setError('')
     setGenerated('')
@@ -91,7 +171,7 @@ function PhoneVisitContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: buildPrompt(selectedCase, selectedSentences, target, customNote, date, settings.managerName),
+          prompt: buildPrompt(selectedCase, pickedSentences, customNote, target, `${date} ${time}`, settings.managerName),
           apiKey: settings.claudeApiKey,
         }),
       })
@@ -111,7 +191,7 @@ function PhoneVisitContent() {
       id: Date.now().toString(),
       caseId: selectedCase.id,
       caseName: selectedCase.name,
-      date,
+      date: `${date} ${time}`,
       target: target || selectedCase.guardian || selectedCase.name,
       content: generated,
       createdAt: new Date().toISOString(),
@@ -119,18 +199,30 @@ function PhoneVisitContent() {
     setSaved(true)
   }
 
+  if (!mounted) {
+    return <div className="text-center py-20 text-gray-400 text-sm">載入中...</div>
+  }
+
   return (
     <div className="max-w-6xl">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">電訪紀錄產生</h2>
 
+      {!hasSentences && (
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-amber-700 text-sm">
+          句型庫尚無資料，請先到
+          <a href="/settings" className="underline font-medium mx-1">設定頁面</a>
+          新增電訪句型，才能使用本功能。
+        </div>
+      )}
+
       <div className="grid grid-cols-[280px,1fr] gap-6">
-        {/* Left panel */}
+        {/* ── 左側 ── */}
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-gray-100 p-4">
             <label className="block text-sm font-semibold text-gray-700 mb-2">選擇個案</label>
             <input
               type="text"
-              placeholder="搜尋..."
+              placeholder="搜尋姓名 / 編號…"
               value={caseSearch}
               onChange={e => setCaseSearch(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-[#52b788]"
@@ -139,7 +231,7 @@ function PhoneVisitContent() {
               {filteredCases.map(c => (
                 <button
                   key={c.id}
-                  onClick={() => { setSelectedCaseId(c.id); setCaseSearch(''); setGenerated(''); setSaved(false); setSelectedSentences([]) }}
+                  onClick={() => handleSelectCase(c.id)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                     selectedCaseId === c.id
                       ? 'bg-[#d8f3dc] text-[#2d6a4f] font-medium'
@@ -150,7 +242,9 @@ function PhoneVisitContent() {
                   {c.caseNumber && <div className="text-xs text-gray-400">{c.caseNumber}</div>}
                 </button>
               ))}
-              {filteredCases.length === 0 && <p className="text-sm text-gray-400 px-3 py-2">找不到個案</p>}
+              {filteredCases.length === 0 && (
+                <p className="text-sm text-gray-400 px-3 py-2">找不到個案</p>
+              )}
             </div>
           </div>
 
@@ -161,6 +255,15 @@ function PhoneVisitContent() {
                 type="date"
                 value={date}
                 onChange={e => setDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">電訪時間</label>
+              <input
+                type="time"
+                value={time}
+                onChange={e => setTime(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
               />
             </div>
@@ -179,9 +282,15 @@ function PhoneVisitContent() {
           {selectedCase && (
             <div className="bg-[#d8f3dc] rounded-xl p-4">
               <p className="font-semibold text-[#2d6a4f] text-sm">{selectedCase.name}</p>
-              {selectedCase.careLevel && <p className="text-xs text-[#2d6a4f]/70 mt-1">照顧等級：{selectedCase.careLevel}</p>}
-              {selectedCase.services?.length > 0 && (
-                <p className="text-xs text-[#2d6a4f]/70">服務：{selectedCase.services.join('、')}</p>
+              {selectedCase.careLevel && (
+                <p className="text-xs text-[#2d6a4f]/70 mt-1">照顧等級：{selectedCase.careLevel}</p>
+              )}
+              {selectedCase.services && selectedCase.services.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {selectedCase.services.map((s, i) => (
+                    <span key={i} className="text-xs bg-white/60 text-[#2d6a4f] px-1.5 py-0.5 rounded-full">{s}</span>
+                  ))}
+                </div>
               )}
               {recentVisits.length > 0 && (
                 <p className="text-xs text-[#2d6a4f]/50 mt-1.5">上次電訪：{recentVisits[0].date}</p>
@@ -190,45 +299,68 @@ function PhoneVisitContent() {
           )}
         </div>
 
-        {/* Right panel */}
+        {/* ── 右側 ── */}
         <div className="space-y-4">
+          {/* 句型區 */}
           <div className="bg-white rounded-xl border border-gray-100 p-5">
-            <h3 className="font-semibold text-gray-700 mb-3">
-              選擇句型
-              <span className="text-xs font-normal text-gray-400 ml-2">點選後 AI 會融入這些重點產生紀錄</span>
-            </h3>
-            {Object.entries(sentencesByCategory).map(([cat, items]) => (
-              <div key={cat} className="mb-3">
-                <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1.5">{cat}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {items.map(s => (
-                    <button
-                      key={s.id}
-                      onClick={() => toggleSentence(s.text)}
-                      title={s.text}
-                      className={`px-3 py-1.5 rounded-lg text-sm border transition-all ${
-                        selectedSentences.includes(s.text)
-                          ? 'bg-[#2d6a4f] text-white border-[#2d6a4f] shadow-sm'
-                          : 'border-gray-200 text-gray-600 hover:border-[#52b788] hover:text-[#2d6a4f]'
-                      }`}
-                    >
-                      {s.text.length > 20 ? s.text.slice(0, 20) + '…' : s.text}
-                    </button>
-                  ))}
-                </div>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="font-semibold text-gray-700">本次電訪句型</h3>
+                <p className="text-xs text-gray-400 mt-0.5">四個類別各隨機抽一句，可點「換一句」替換</p>
               </div>
-            ))}
+              <button
+                onClick={() => autoSelect(selectedCase)}
+                disabled={!hasSentences}
+                className="px-3 py-1.5 text-sm border border-[#52b788] text-[#2d6a4f] rounded-lg hover:bg-[#d8f3dc] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                🔀 重新隨機
+              </button>
+            </div>
+
+            {!hasSentences ? (
+              <div className="text-center py-8 text-gray-400">
+                <p className="text-sm">句型庫為空，請先到「設定」新增句型</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {CATEGORIES.map(cat => {
+                  const text = picked[cat] || ''
+                  const pool = sentences.filter(s => s.category === cat)
+                  return (
+                    <div key={cat} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                      <div className="flex-1 min-w-0">
+                        <span className="inline-block text-xs font-semibold text-[#2d6a4f] bg-[#d8f3dc] px-1.5 py-0.5 rounded mr-2 mb-1">
+                          {CATEGORY_LABELS[cat]}
+                        </span>
+                        <span className="text-sm text-gray-700 leading-relaxed">
+                          {text || <span className="text-gray-400 italic">（無相關句型）</span>}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => swapOne(cat)}
+                        disabled={pool.length === 0}
+                        className="flex-shrink-0 text-xs text-gray-400 hover:text-[#2d6a4f] border border-gray-200 hover:border-[#52b788] rounded px-2 py-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        換一句
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
+          {/* 補充說明 */}
           <div className="bg-white rounded-xl border border-gray-100 p-4">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              補充說明 <span className="font-normal text-gray-400">（選填，本次特殊狀況）</span>
+              個案其他狀況補充
+              <span className="font-normal text-gray-400 ml-1">（選填，AI 會一併融入電訪紀錄）</span>
             </label>
             <textarea
               value={customNote}
               onChange={e => setCustomNote(e.target.value)}
-              placeholder="例：個案本週回診，醫師調整血壓藥劑量..."
-              rows={2}
+              placeholder="例：個案本週回診，醫師調整血壓藥劑量；照顧者反應近期較疲憊，詢問喘息服務…"
+              rows={3}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788] resize-none"
             />
           </div>
@@ -237,21 +369,30 @@ function PhoneVisitContent() {
             <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-red-600 text-sm">{error}</div>
           )}
 
-          <button
-            onClick={handleGenerate}
-            disabled={generating || !selectedCaseId}
-            className="w-full py-3 bg-[#2d6a4f] text-white rounded-xl font-semibold hover:bg-[#1b4332] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-          >
-            {generating ? (
-              <>
-                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                AI 產生中，請稍候...
-              </>
-            ) : '✨ AI 產生電訪紀錄'}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleQuickCombine}
+              disabled={!selectedCaseId || pickedSentences.length === 0 || !hasSentences}
+              className="flex-1 py-3 bg-white border-2 border-[#2d6a4f] text-[#2d6a4f] rounded-xl font-semibold hover:bg-[#d8f3dc] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              ⚡ 直接組合
+            </button>
+            <button
+              onClick={handleGenerate}
+              disabled={generating || !selectedCaseId || pickedSentences.length === 0 || !hasSentences}
+              className="flex-1 py-3 bg-[#2d6a4f] text-white rounded-xl font-semibold hover:bg-[#1b4332] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            >
+              {generating ? (
+                <>
+                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  AI 改寫中…
+                </>
+              ) : '✨ AI 潤飾'}
+            </button>
+          </div>
 
           {generated && (
             <div className="bg-white rounded-xl border border-gray-100 p-5">
