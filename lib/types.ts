@@ -6,6 +6,7 @@ export interface Case {
   address: string
   birthDate: string
   idNumber: string
+  gender?: string
   status: 'active' | 'suspended' | 'closed'
   startDate: string
   careLevel: string
@@ -13,7 +14,15 @@ export interface Case {
   guardian: string
   guardianPhone: string
   notes: string
+  notes2?: string
   services: string[]
+  visitTarget?: string
+  lastHomeVisitDate?: string
+  homeVisitIntervalMonths?: string
+  shortGoal?: string
+  midGoal?: string
+  longGoal?: string
+  responsibleWorker?: string
 }
 
 export interface PhoneVisitRecord {

@@ -1,12 +1,29 @@
 'use client'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { useStore } from '@/lib/store'
+import type { Case } from '@/lib/types'
+
+const STATUS_OPTIONS: { value: Case['status']; label: string; color: string }[] = [
+  { value: 'active', label: '在案', color: 'bg-green-100 text-green-700 border-green-200' },
+  { value: 'suspended', label: '暫停', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
+  { value: 'closed', label: '結案', color: 'bg-gray-100 text-gray-500 border-gray-200' },
+]
 
 export default function CaseDetailPage({ params }: { params: { id: string } }) {
-  const { getCaseById, getPhoneVisitsByCase, getHomeVisitsByCase } = useStore()
+  const router = useRouter()
+  const { getCaseById, getPhoneVisitsByCase, getHomeVisitsByCase, updateCaseStatus, deleteCase, settings } = useStore()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
   const c = getCaseById(params.id)
   const phoneVisits = getPhoneVisitsByCase(params.id)
   const homeVisits = getHomeVisitsByCase(params.id)
+  const [syncMsg, setSyncMsg] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  if (!mounted) return <div className="text-center py-20 text-gray-400 text-sm">載入中...</div>
 
   if (!c) {
     return (
@@ -18,8 +35,49 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
     )
   }
 
-  const statusLabel = c.status === 'active' ? '在案' : c.status === 'suspended' ? '暫停' : '結案'
-  const statusColor = c.status === 'active' ? 'bg-green-100 text-green-700' : c.status === 'suspended' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'
+  const currentStatus = STATUS_OPTIONS.find(s => s.value === c.status) || STATUS_OPTIONS[0]
+
+  const handleStatusChange = async (newStatus: Case['status']) => {
+    if (newStatus === c.status) return
+    updateCaseStatus(c.id, newStatus)
+    setSyncMsg('更新中...')
+    try {
+      const res = await fetch('/api/update-case', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          appsScriptUrl: settings.appsScriptUrl,
+          action: 'updateStatus',
+          caseName: c.name,
+          caseNumber: c.caseNumber,
+          status: newStatus,
+        }),
+      })
+      const data = await res.json()
+      setSyncMsg(data.synced ? '✓ 已同步至 Google Sheet' : '✓ 已更新（未同步 Google Sheet）')
+    } catch {
+      setSyncMsg('✓ 已更新（未同步 Google Sheet）')
+    }
+    setTimeout(() => setSyncMsg(''), 4000)
+  }
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    try {
+      await fetch('/api/update-case', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          appsScriptUrl: settings.appsScriptUrl,
+          action: 'deleteCase',
+          caseName: c.name,
+          caseNumber: c.caseNumber,
+        }),
+      })
+    } catch {}
+    deleteCase(c.id)
+    router.push('/')
+  }
 
   return (
     <div className="max-w-5xl">
@@ -27,7 +85,32 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
         <Link href="/" className="text-gray-400 hover:text-gray-600 text-sm">← 返回</Link>
         <div className="w-px h-4 bg-gray-200" />
         <h2 className="text-2xl font-bold text-gray-800">{c.name}</h2>
-        <span className={`px-2.5 py-0.5 rounded-full text-sm font-medium ${statusColor}`}>{statusLabel}</span>
+        <span className={`px-2.5 py-0.5 rounded-full text-sm font-medium ${currentStatus.color}`}>
+          {currentStatus.label}
+        </span>
+      </div>
+
+      {/* Status change */}
+      <div className="bg-white rounded-xl border border-gray-100 p-4 mb-4 flex items-center gap-4">
+        <span className="text-sm text-gray-500 font-medium">變更狀態：</span>
+        <div className="flex gap-2">
+          {STATUS_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => handleStatusChange(opt.value)}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                c.status === opt.value
+                  ? opt.color + ' ring-2 ring-offset-1 ring-current'
+                  : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        {syncMsg && (
+          <span className="text-xs text-[#2d6a4f] ml-2">{syncMsg}</span>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-5">
@@ -35,21 +118,24 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
           <h3 className="font-semibold text-gray-700 mb-4 pb-2 border-b border-gray-50">基本資料</h3>
           <dl className="space-y-2.5">
             <InfoRow label="個案編號" value={c.caseNumber} />
+            <InfoRow label="性別" value={c.gender} />
             <InfoRow label="生日" value={c.birthDate} />
             <InfoRow label="身分證" value={c.idNumber} />
             <InfoRow label="電話" value={c.phone} />
             <InfoRow label="地址" value={c.address} />
             <InfoRow label="開案日期" value={c.startDate} />
+            <InfoRow label="負責社工" value={c.responsibleWorker} />
           </dl>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 p-5">
           <h3 className="font-semibold text-gray-700 mb-4 pb-2 border-b border-gray-50">照顧資訊</h3>
           <dl className="space-y-2.5">
-            <InfoRow label="照顧等級" value={c.careLevel} />
-            <InfoRow label="失能狀況" value={c.disability} />
+            <InfoRow label="身障類別" value={c.disability} />
+            <InfoRow label="電訪對象" value={c.visitTarget} />
             <InfoRow label="主要照顧者" value={c.guardian} />
             <InfoRow label="照顧者電話" value={c.guardianPhone} />
+            <InfoRow label="最近家訪日" value={c.lastHomeVisitDate} />
           </dl>
           {c.services && c.services.length > 0 && (
             <div className="mt-3 pt-3 border-t border-gray-50">
@@ -61,13 +147,22 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
               </div>
             </div>
           )}
+          {(c.shortGoal || c.midGoal || c.longGoal) && (
+            <div className="mt-3 pt-3 border-t border-gray-50 space-y-1.5">
+              <p className="text-xs text-gray-400 mb-1">照顧目標</p>
+              <InfoRow label="短期目標" value={c.shortGoal} />
+              <InfoRow label="中期目標" value={c.midGoal} />
+              <InfoRow label="長期目標" value={c.longGoal} />
+            </div>
+          )}
         </div>
       </div>
 
-      {c.notes && (
+      {(c.notes || c.notes2) && (
         <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 mb-5">
           <h3 className="font-medium text-amber-800 mb-1 text-sm">備註</h3>
-          <p className="text-sm text-amber-700 whitespace-pre-wrap">{c.notes}</p>
+          {c.notes && <p className="text-sm text-amber-700 whitespace-pre-wrap">{c.notes}</p>}
+          {c.notes2 && <p className="text-sm text-amber-700 whitespace-pre-wrap mt-1">{c.notes2}</p>}
         </div>
       )}
 
@@ -86,7 +181,7 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 mb-6">
         <VisitHistory
           title="電訪紀錄"
           visits={phoneVisits.map(v => ({ id: v.id, date: v.date, preview: v.content }))}
@@ -95,6 +190,37 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
           title="家訪紀錄"
           visits={homeVisits.map(v => ({ id: v.id, date: v.date, preview: v.planContent }))}
         />
+      </div>
+
+      {/* Delete section */}
+      <div className="border border-red-100 rounded-xl p-4 bg-red-50/50">
+        <h3 className="text-sm font-medium text-red-700 mb-2">刪除個案</h3>
+        <p className="text-xs text-red-500 mb-3">刪除後將同步清除 Google Sheet 中的姓名欄位，並移除所有相關紀錄。此操作無法復原。</p>
+        {!confirmDelete ? (
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="px-4 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+          >
+            刪除此個案
+          </button>
+        ) : (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-red-600">確定要刪除「{c.name}」嗎？</span>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+            >
+              {deleting ? '刪除中...' : '確定刪除'}
+            </button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="px-4 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              取消
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

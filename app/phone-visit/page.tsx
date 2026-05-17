@@ -127,6 +127,7 @@ function PhoneVisitContent() {
     setCaseSearch('')
     setGenerated('')
     setSaved(false)
+    setTarget(c?.visitTarget || c?.guardian || '')
     autoSelect(c)
   }
 
