@@ -168,6 +168,13 @@ export const useStore = create<StoreState & StoreActions>()(
           const custom = existing.filter((s) => !defaultIds.has(s.id) && !/^s\d+$/.test(s.id))
           state = { ...state, sentences: [...DEFAULT_SENTENCES, ...custom] }
         }
+        if (version < 4) {
+          // Restore DEFAULT_SENTENCES if browser has empty sentence library
+          const existing: Sentence[] = state.sentences || []
+          const defaultIds = new Set(DEFAULT_SENTENCES.map((s) => s.id))
+          const custom = existing.filter((s) => !defaultIds.has(s.id) && !/^s\d+$/.test(s.id))
+          state = { ...state, sentences: [...DEFAULT_SENTENCES, ...custom] }
+        }
         return state
       },
     }
