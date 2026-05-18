@@ -52,6 +52,22 @@ ${customNote ? `\n補充說明（請一併融入）：${customNote}` : ''}
 五、轉介其他資源：（如無則寫「無轉介。」）`
 }
 
+function parseVisitTarget(raw: string): string {
+  if (!raw) return ''
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) {
+      return parsed.map((p: { name?: string; relation?: string }) =>
+        p.relation ? `${p.name}（${p.relation}）` : p.name || ''
+      ).filter(Boolean).join('、')
+    }
+    if (typeof parsed === 'object' && parsed.name) {
+      return parsed.relation ? `${parsed.name}（${parsed.relation}）` : parsed.name
+    }
+  } catch {}
+  return raw
+}
+
 function PhoneVisitContent() {
   const searchParams = useSearchParams()
   const { cases, sentences, settings, addPhoneVisit, getPhoneVisitsByCase } = useStore()
@@ -127,7 +143,7 @@ function PhoneVisitContent() {
     setCaseSearch('')
     setGenerated('')
     setSaved(false)
-    setTarget(c?.visitTarget || c?.guardian || '')
+    setTarget(parseVisitTarget(c?.visitTarget || '') || c?.guardian || '')
     autoSelect(c)
   }
 
@@ -186,9 +202,9 @@ ${content}${customNote ? `　${customNote}` : ''}
     }
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedCase || !generated) return
-    addPhoneVisit({
+    const visit = {
       id: Date.now().toString(),
       caseId: selectedCase.id,
       caseName: selectedCase.name,
@@ -196,8 +212,30 @@ ${content}${customNote ? `　${customNote}` : ''}
       target: target || selectedCase.guardian || selectedCase.name,
       content: generated,
       createdAt: new Date().toISOString(),
-    })
+    }
+    addPhoneVisit(visit)
     setSaved(true)
+    if (settings.appsScriptUrl) {
+      try {
+        await fetch('/api/save-visit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            appsScriptUrl: settings.appsScriptUrl,
+            sheetName: settings.phoneVisitSheetName || '電訪紀錄',
+            record: {
+              caseId: selectedCase.caseNumber || selectedCase.id,
+              date: `${date} ${time}`,
+              caseNumber: selectedCase.caseNumber || '',
+              caseName: selectedCase.name,
+              method: '電訪',
+              target: visit.target,
+              content: generated,
+            },
+          }),
+        })
+      } catch {}
+    }
   }
 
   if (!mounted) {
