@@ -175,10 +175,10 @@ export const useStore = create<StoreState & StoreActions>()(
           state = { ...state, sentences: [...DEFAULT_SENTENCES, ...custom] }
         }
         if (version < 4) {
-          const s = (state.settings || {}) as Record<string, unknown>
+          const s = (state.settings || {}) as unknown as Record<string, unknown>
           if (!s.phoneVisitSheetName) s.phoneVisitSheetName = '電訪紀錄'
           if (!s.homeVisitSheetName) s.homeVisitSheetName = '家訪紀錄'
-          state = { ...state, settings: s as Settings }
+          state = { ...state, settings: s as unknown as Settings }
         }
         return state
       },
