@@ -56,4 +56,6 @@ export interface Settings {
   organizationName: string
   managerName: string
   managerPhone: string
+  phoneVisitSheetName: string
+  homeVisitSheetName: string
 }

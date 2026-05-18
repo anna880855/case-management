@@ -75,6 +75,7 @@ interface StoreState {
 interface StoreActions {
   setCases: (cases: Case[]) => void
   updateCaseStatus: (id: string, status: Case['status']) => void
+  updateCase: (id: string, fields: Partial<Case>) => void
   deleteCase: (id: string) => void
   addPhoneVisit: (visit: PhoneVisitRecord) => void
   deletePhoneVisit: (id: string) => void
@@ -102,6 +103,8 @@ export const useStore = create<StoreState & StoreActions>()(
         organizationName: '',
         managerName: '林侑萱',
         managerPhone: '0902692567',
+        phoneVisitSheetName: '電訪紀錄',
+        homeVisitSheetName: '家訪紀錄',
       },
 
       setCases: (cases) => set({ cases }),
@@ -109,6 +112,11 @@ export const useStore = create<StoreState & StoreActions>()(
       updateCaseStatus: (id, status) =>
         set((state) => ({
           cases: state.cases.map((c) => c.id === id ? { ...c, status } : c),
+        })),
+
+      updateCase: (id, fields) =>
+        set((state) => ({
+          cases: state.cases.map((c) => c.id === id ? { ...c, ...fields } : c),
         })),
 
       deleteCase: (id) =>
@@ -151,7 +159,7 @@ export const useStore = create<StoreState & StoreActions>()(
     }),
     {
       name: 'case-mgmt-v1',
-      version: 3,
+      version: 4,
       migrate: (persistedState: unknown, version: number) => {
         let state = persistedState as StoreState & StoreActions
         if (version < 2) {
@@ -161,19 +169,16 @@ export const useStore = create<StoreState & StoreActions>()(
           state = { ...state, sentences: [...existing, ...toAdd] }
         }
         if (version < 3) {
-          // 重建預設句型為 4 分類（service/physical/family/plan）
-          // 保留使用者自訂句型（非 s01–s52 的 id）
           const existing: Sentence[] = state.sentences || []
           const defaultIds = new Set(DEFAULT_SENTENCES.map((s) => s.id))
           const custom = existing.filter((s) => !defaultIds.has(s.id) && !/^s\d+$/.test(s.id))
           state = { ...state, sentences: [...DEFAULT_SENTENCES, ...custom] }
         }
         if (version < 4) {
-          // Restore DEFAULT_SENTENCES if browser has empty sentence library
-          const existing: Sentence[] = state.sentences || []
-          const defaultIds = new Set(DEFAULT_SENTENCES.map((s) => s.id))
-          const custom = existing.filter((s) => !defaultIds.has(s.id) && !/^s\d+$/.test(s.id))
-          state = { ...state, sentences: [...DEFAULT_SENTENCES, ...custom] }
+          const s = (state.settings || {}) as Record<string, unknown>
+          if (!s.phoneVisitSheetName) s.phoneVisitSheetName = '電訪紀錄'
+          if (!s.homeVisitSheetName) s.homeVisitSheetName = '家訪紀錄'
+          state = { ...state, settings: s as Settings }
         }
         return state
       },
