@@ -443,10 +443,7 @@ function HomeVisitContent() {
     setDraftLabel('')
   }
 
-  const handleDeleteDraft = async (ts: string) => {   
-    const serviceList = serviceEnabled
-        ? services.map(s => `${s.code}[${s.name}] ${s.units}單位/月`).join('；') || '（尚未填寫）'
-        : '暫無需求'
+  const handleDeleteDraft = async (ts: string) => {
     if (!selectedCase) return
     const caseNumber = selectedCase.caseNumber || selectedCase.id
     setDrafts(prev => prev.filter(d => d.ts !== ts))
