@@ -446,7 +446,7 @@ function HomeVisitContent() {
   }
 
   const handleDeleteDraft = async (ts: string) => {   
-    const serviceList = servicesNoNeeds ? '暫無需求' : (services.map(...).join('；') || '（尚未填寫）') 
+    const serviceList = servicesNoNeeds ? '暫無需求' : (services.map(s => `${s.code}[${s.name}] ${s.units}單位/月`).join('；') || '（尚未填寫）')
     if (!selectedCase) return
     const caseNumber = selectedCase.caseNumber || selectedCase.id
     setDrafts(prev => prev.filter(d => d.ts !== ts))
