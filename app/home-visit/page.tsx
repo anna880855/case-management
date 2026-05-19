@@ -258,6 +258,7 @@ function HomeVisitContent() {
   const [goalSynced, setGoalSynced] = useState(false)
 
   // ── Care Plan
+  const [noServiceNeeded, setNoServiceNeeded] = useState(false)
   const [services, setServices] = useState<{ id: string; category: string; code: string; name: string; units: string }[]>([])
   const [showServiceDropdown, setShowServiceDropdown] = useState(false)
   const [customServiceName, setCustomServiceName] = useState('')
@@ -327,7 +328,7 @@ function HomeVisitContent() {
     transportation, transportHospital, transportEnabled, aidsDetail,
     respiteEnabled, respiteStartYear, respiteStartMonth, respiteEndYear, respiteEndMonth,
     respiteAsOfMonth, respiteRemaining, respiteItems,
-    referral, finalDoc,
+    noServiceNeeded, referral, finalDoc,
   })
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -397,6 +398,7 @@ function HomeVisitContent() {
     if (d.respiteAsOfMonth !== undefined) setRespiteAsOfMonth(d.respiteAsOfMonth)
     if (d.respiteRemaining !== undefined) setRespiteRemaining(d.respiteRemaining)
     if (d.respiteItems) setRespiteItems(d.respiteItems)
+    if (d.noServiceNeeded !== undefined) setNoServiceNeeded(d.noServiceNeeded)
     if (d.referral !== undefined) setReferral(d.referral)
     if (d.finalDoc !== undefined) setFinalDoc(d.finalDoc)
   }
@@ -556,9 +558,14 @@ ${caregiverInput}
   const handleGenProblems = () => withError(async () => {
     setGenProblems(true)
     try {
-      const prompt = `你是一位專業長照個案管理師，請針對以下照顧問題清單，為每個問題撰寫一句具體的臨床說明（說明原因或影響），以繁體中文輸出。
+      const context = [
+        diseaseGenerated && `疾病史：${diseaseGenerated}`,
+        caseGenerated && `個案狀況：${caseGenerated}`,
+        caregiverGenerated && `照顧者評估：${caregiverGenerated}`,
+      ].filter(Boolean).join('\n')
+      const prompt = `你是一位專業長照個案管理師，請針對以下照顧問題清單，結合個案摘述，為每個問題撰寫一句具體的臨床說明（說明原因或影響），以繁體中文輸出。
 
-問題清單（按優先順序）：
+${context ? `【個案摘述】\n${context}\n\n` : ''}問題清單（按優先順序）：
 ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 
 請以「1. 問題名稱：說明文字」格式逐條輸出，不要其他說明。`
@@ -589,7 +596,7 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n')}
     } finally { setGenGoals(false) }
   })
 
-  // ── Final doc AI
+  // ── Final doc — direct assembly (no second AI pass)
   const handleGenFinal = () => withError(async () => {
     setGenFinal(true)
     setSaved(false)
@@ -598,7 +605,9 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n')}
       const year = d.getFullYear() - 1911
       const month = d.getMonth() + 1
       const day = d.getDate()
-      const serviceList = services.map(s => `${s.code}[${s.name}] ${s.units}單位/月`).join('；') || '（尚未填寫）'
+      const serviceList = noServiceNeeded
+        ? '暫無需求'
+        : services.map(s => `${s.code}[${s.name}] ${s.units}單位/月`).join('；') || '（尚未填寫）'
       const transportDetail = transportEnabled
         ? `${transportation}，至${transportHospital || '醫療院所'}`
         : '暫無需求'
@@ -606,52 +615,29 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n')}
         ? `本案喘息額度自${respiteStartYear}年${respiteStartMonth}月至${respiteEndYear}年${respiteEndMonth}月，截至${respiteAsOfMonth}月尚餘${respiteRemaining}元。${respiteItems.map(i => `GA${i.code}[${i.name}]*${i.units}單位/年`).join('；')}`
         : '暫無需求'
 
-      const prompt = `你是一位專業長照個案管理師，請根據以下各節內容，以繁體中文產生完整家訪記錄，嚴格按照格式輸出，不要增減段落標題。
+      const problemSection = problemExplanations
+        ? problemExplanations
+        : rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'
 
----資料---
-家訪日期：民國${year}年${month}月${day}日
-訪視對象：${visitTarget || selectedCase?.guardian || '個案及家屬'}
-個管師：${settings.managerName} ${settings.managerPhone}
-
-疾病史：${diseaseGenerated || '（未產生）'}
-個案狀況：${caseGenerated || '（未產生）'}
-主要照顧者評估：${caregiverGenerated || caregiverInput || '（未填）'}
-
-照顧問題（按優先順序）：
-${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'}
-問題說明：${problemExplanations || '（未產生）'}
-
-短期目標：${careGoals.short || '（未填）'}
-中期目標：${careGoals.mid || '（未填）'}
-長期目標：${careGoals.long || '（未填）'}
-
-照顧及專業服務：${serviceList}
-交通接送服務：${transportDetail}
-輔具及居家無障礙環境改善服務：${aidsDetail}
-喘息服務/短照服務：${respiteText}
-轉介其他資源：${referral}
-
----格式---
-一、本案於民國${year}年${month}月${day}日家訪，與個案及家屬${visitTarget || selectedCase?.guardian || '家屬'}討論照顧計畫/個管${settings.managerName} ${settings.managerPhone}。
+      const doc = `一、本案於民國${year}年${month}月${day}日家訪，與${visitTarget || selectedCase?.guardian || '個案及家屬'}討論照顧計畫/個管${settings.managerName} ${settings.managerPhone}。
 二、個案摘述
-1.疾病史：（疾病史內容）
-2.個案狀況：（個案狀況內容，2-4句）
-3.主要照顧者評估：（照顧者評估內容，2-3句）
+1.疾病史：${diseaseGenerated || '（未產生）'}
+2.個案狀況：${caseGenerated || '（未產生）'}
+3.主要照顧者評估：${caregiverGenerated || caregiverInput || '（未填）'}
 三、照顧問題
-（條列各問題，格式：1. 問題名稱：說明）
+${problemSection}
 四、照顧計畫目標
-1.短期目標：（內容）
-2.中期目標：（內容）
-3.長期目標：（內容）
+1.短期目標：${careGoals.short || '（未填）'}
+2.中期目標：${careGoals.mid || '（未填）'}
+3.長期目標：${careGoals.long || '（未填）'}
 
-一、照顧及專業服務：（服務清單）
-二、交通接送服務：（內容）
-三、輔具及居家無障礙環境改善服務：（內容）
-四、喘息服務/短照服務：（內容）
-五、轉介其他資源：（內容）
+一、照顧及專業服務：${serviceList}
+二、交通接送服務：${transportDetail}
+三、輔具及居家無障礙環境改善服務：${aidsDetail}
+四、喘息服務/短照服務：${respiteText}
+五、轉介其他資源：${referral}`
 
-請直接依格式輸出，不要前置說明。`
-      setFinalDoc(await callAI(prompt))
+      setFinalDoc(doc)
     } finally { setGenFinal(false) }
   })
 
@@ -755,7 +741,7 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'}
     caregiverGenerated !== '' || caregiverInput !== '',
     rankedProblems.length > 0,
     careGoals.short !== '' || careGoals.mid !== '' || careGoals.long !== '',
-    services.length > 0,
+    noServiceNeeded || services.length > 0,
     finalDoc !== '',
   ]
 
@@ -1457,7 +1443,19 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'}
 
                 {/* Services */}
                 <div className="mb-4">
-                  <SectionLabel>照顧及專業服務</SectionLabel>
+                  <div className="flex items-center justify-between mb-2">
+                    <SectionLabel>照顧及專業服務</SectionLabel>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                      <input
+                        type="checkbox"
+                        checked={noServiceNeeded}
+                        onChange={e => setNoServiceNeeded(e.target.checked)}
+                        className="accent-[#2d6a4f] w-4 h-4"
+                      />
+                      暫無需求
+                    </label>
+                  </div>
+                  {!noServiceNeeded && <>
                   <div className="space-y-2 mb-3">
                     {services.map(s => (
                       <div key={s.id} className="flex items-center gap-2 p-2 border border-gray-100 rounded-lg bg-gray-50">
@@ -1545,6 +1543,7 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'}
                       </div>
                     )}
                   </div>
+                  </>}
                 </div>
 
                 {/* Transport */}
@@ -1698,7 +1697,7 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'}
                 </div>
 
                 <div className="flex justify-end mb-4">
-                  <GenButton onClick={handleGenFinal} loading={genFinal} label="✨ AI 產生完整家訪記錄" />
+                  <GenButton onClick={handleGenFinal} loading={genFinal} label="📄 產生完整家訪記錄" />
                 </div>
 
                 {finalDoc && (
