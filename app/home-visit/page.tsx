@@ -256,8 +256,6 @@ function HomeVisitContent() {
   const [careGoals, setCareGoals] = useState({ short: '', mid: '', long: '' })
   const [goalSyncing, setGoalSyncing] = useState(false)
   const [goalSynced, setGoalSynced] = useState(false)
-  const [serviceEnabled, setServiceEnabled] = useState(false)
-
   // ── Care Plan
   const [serviceEnabled, setServiceEnabled] = useState(false)
   const [services, setServices] = useState<{ id: string; category: string; code: string; name: string; units: string }[]>([])
