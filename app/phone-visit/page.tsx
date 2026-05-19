@@ -164,9 +164,9 @@ function PhoneVisitContent() {
   const buildGoalBlock = () => {
     if (!selectedCase) return ''
     const goals: { key: GoalKey; text: string }[] = [
-      { key: 'short', text: selectedCase.shortGoal || '' },
-      { key: 'mid', text: selectedCase.midGoal || '' },
-      { key: 'long', text: selectedCase.longGoal || '' },
+      { key: 'short' as GoalKey, text: selectedCase.shortGoal || '' },
+      { key: 'mid' as GoalKey, text: selectedCase.midGoal || '' },
+      { key: 'long' as GoalKey, text: selectedCase.longGoal || '' },
     ].filter(g => g.text)
     if (goals.length === 0) return ''
     const lines = goals.map(g => {
