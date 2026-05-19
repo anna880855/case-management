@@ -256,10 +256,10 @@ function HomeVisitContent() {
   const [careGoals, setCareGoals] = useState({ short: '', mid: '', long: '' })
   const [goalSyncing, setGoalSyncing] = useState(false)
   const [goalSynced, setGoalSynced] = useState(false)
-  const [servicesNoNeeds, setServicesNoNeeds] = useState(false)
+  const [serviceEnabled, setServiceEnabled] = useState(false)
 
   // ── Care Plan
-  const [noServiceNeeded, setNoServiceNeeded] = useState(false)
+  const [serviceEnabled, setServiceEnabled] = useState(false)
   const [services, setServices] = useState<{ id: string; category: string; code: string; name: string; units: string }[]>([])
   const [showServiceDropdown, setShowServiceDropdown] = useState(false)
   const [customServiceName, setCustomServiceName] = useState('')
@@ -329,7 +329,7 @@ function HomeVisitContent() {
     transportation, transportHospital, transportEnabled, aidsDetail,
     respiteEnabled, respiteStartYear, respiteStartMonth, respiteEndYear, respiteEndMonth,
     respiteAsOfMonth, respiteRemaining, respiteItems,
-    noServiceNeeded, referral, finalDoc,
+    serviceEnabled, referral, finalDoc,
   })
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -399,7 +399,7 @@ function HomeVisitContent() {
     if (d.respiteAsOfMonth !== undefined) setRespiteAsOfMonth(d.respiteAsOfMonth)
     if (d.respiteRemaining !== undefined) setRespiteRemaining(d.respiteRemaining)
     if (d.respiteItems) setRespiteItems(d.respiteItems)
-    if (d.noServiceNeeded !== undefined) setNoServiceNeeded(d.noServiceNeeded)
+    if (d.serviceEnabled !== undefined) setServiceEnabled(d.serviceEnabled)
     if (d.referral !== undefined) setReferral(d.referral)
     if (d.finalDoc !== undefined) setFinalDoc(d.finalDoc)
   }
@@ -446,7 +446,9 @@ function HomeVisitContent() {
   }
 
   const handleDeleteDraft = async (ts: string) => {   
-    const serviceList = servicesNoNeeds ? '暫無需求' : (services.map(s => `${s.code}[${s.name}] ${s.units}單位/月`).join('；') || '（尚未填寫）')
+    const serviceList = serviceEnabled
+        ? services.map(s => `${s.code}[${s.name}] ${s.units}單位/月`).join('；') || '（尚未填寫）'
+        : '暫無需求'
     if (!selectedCase) return
     const caseNumber = selectedCase.caseNumber || selectedCase.id
     setDrafts(prev => prev.filter(d => d.ts !== ts))
@@ -607,9 +609,9 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n')}
       const year = d.getFullYear() - 1911
       const month = d.getMonth() + 1
       const day = d.getDate()
-      const serviceList = noServiceNeeded
-        ? '暫無需求'
-        : services.map(s => `${s.code}[${s.name}] ${s.units}單位/月`).join('；') || '（尚未填寫）'
+      const serviceList = serviceEnabled
+        ? services.map(s => `${s.code}[${s.name}] ${s.units}單位/月`).join('；') || '（尚未填寫）'
+        : '暫無需求'
       const transportDetail = transportEnabled
         ? `${transportation}，至${transportHospital || '醫療院所'}`
         : '暫無需求'
@@ -743,7 +745,7 @@ ${problemSection}
     caregiverGenerated !== '' || caregiverInput !== '',
     rankedProblems.length > 0,
     careGoals.short !== '' || careGoals.mid !== '' || careGoals.long !== '',
-    noServiceNeeded || services.length > 0,
+    serviceEnabled,
     finalDoc !== '',
   ]
 
@@ -1445,18 +1447,18 @@ ${problemSection}
 
                 {/* Services */}
                 <div className="mb-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <SectionLabel>照顧及專業服務</SectionLabel>
-                    <label className="flex items-center gap-1.5 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={servicesNoNeeds}
-                        onChange={e => setServicesNoNeeds(e.target.checked)}
-                        className="accent-[#2d6a4f] w-4 h-4" />
-                       <span className="text-sm text-gray-700">暫無需求</span>
-                    </label>
+                  <SectionLabel>照顧及專業服務</SectionLabel>
+                  <div className="flex items-center gap-2 mb-2">
+                    <input
+                      type="checkbox"
+                      checked={serviceEnabled}
+                      onChange={e => setServiceEnabled(e.target.checked)}
+                      className="accent-[#2d6a4f] w-4 h-4"
+                      id="serviceCheck"
+                    />
+                    <label htmlFor="serviceCheck" className="text-sm text-gray-700 cursor-pointer">需要照顧及專業服務</label>
                   </div>
-                  {!noServiceNeeded && <>
+                  {serviceEnabled && <>
                   <div className="space-y-2 mb-3">
                     {services.map(s => (
                       <div key={s.id} className="flex items-center gap-2 p-2 border border-gray-100 rounded-lg bg-gray-50">
