@@ -141,6 +141,34 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* Visit Sheet Names */}
+      <div className="bg-white rounded-xl border border-gray-100 p-6 mb-5">
+        <h3 className="font-semibold text-gray-700 mb-1">訪視紀錄分頁名稱</h3>
+        <p className="text-xs text-gray-400 mb-3">指定 Google Sheet 中電訪與家訪紀錄的工作表分頁名稱（需與 Sheet 分頁名稱完全相同）</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">電訪紀錄分頁</label>
+            <input
+              type="text"
+              value={settings.phoneVisitSheetName || '電訪紀錄'}
+              onChange={e => updateSettings({ phoneVisitSheetName: e.target.value })}
+              placeholder="電訪紀錄"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">家訪紀錄分頁</label>
+            <input
+              type="text"
+              value={settings.homeVisitSheetName || '家訪紀錄'}
+              onChange={e => updateSettings({ homeVisitSheetName: e.target.value })}
+              placeholder="家訪紀錄"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Claude API Key */}
       <div className="bg-white rounded-xl border border-gray-100 p-6 mb-5">
         <h3 className="font-semibold text-gray-700 mb-1">Claude API Key</h3>

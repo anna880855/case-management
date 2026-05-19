@@ -1,263 +1,551 @@
 'use client'
-import { useState, useMemo, useEffect } from 'react'
-import Link from 'next/link'
+import { useState, useMemo, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useStore } from '@/lib/store'
-import type { Case } from '@/lib/types'
+import type { Case, Sentence } from '@/lib/types'
 
-const STATUS_LABEL: Record<string, string> = {
-  active: '在案',
-  suspended: '暫停',
-  closed: '結案',
+const CATEGORIES = ['service', 'physical', 'family', 'plan'] as const
+type PhoneCategory = typeof CATEGORIES[number]
+const CATEGORY_LABELS: Record<PhoneCategory, string> = {
+  service: '服務使用',
+  physical: '身心狀況',
+  family: '家屬照顧',
+  plan: '計畫需求',
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  active: 'bg-green-100 text-green-700',
-  suspended: 'bg-yellow-100 text-yellow-700',
-  closed: 'bg-gray-100 text-gray-500',
+function buildPrompt(
+  c: Case,
+  pickedSentences: { category: string; text: string }[],
+  customNote: string,
+  target: string,
+  date: string,
+  managerName: string
+): string {
+  const sentenceBlock = pickedSentences.map(s => `【${s.category}】${s.text}`).join('\n')
+  return `你是一位專業的個案管理師（${managerName}），請根據以下資訊產生一份正式的電訪紀錄，使用繁體中文，語氣專業具體，150-250字。
+
+個案資料：
+- 姓名：${c.name}
+- 照顧等級：${c.careLevel || ''}
+- 目前服務：${c.services?.join('、') || ''}
+- 主要照顧者：${c.guardian || ''}
+
+電訪日期：${date}
+電訪對象：${target || c.guardian || c.name}
+電訪人員：${managerName}
+
+本次電訪重點（請融入以下各項內容，改寫為流暢的第三人稱段落，不要分條列項）：
+${sentenceBlock}
+${customNote ? `\n補充說明（請一併融入）：${customNote}` : ''}
+
+請依照以下固定格式輸出（直接輸出，不要加任何說明文字）：
+
+一、電訪日期：${date}
+二、電訪對象：${target || c.guardian || c.name}
+三、訪談內容：
+（150-250字流暢段落）
+
+一、照顧及專業服務：（根據情況填寫，如無異動則寫「服務穩定無須異動。」）
+二、交通接送服務：（如無新增則寫「暫無新增照會。」）
+三、輔具及居家無障礙環境改善：（如無需求則寫「無新增需求。」）
+四、喘息服務：（如無需求則寫「與案家屬確認暫無需求。」）
+五、轉介其他資源：（如無則寫「無轉介。」）`
 }
 
-const STATUS_FILTERS = [
-  { value: 'active', label: '在案' },
-  { value: 'suspended', label: '暫停' },
-  { value: 'closed', label: '結案' },
-  { value: 'all', label: '全部' },
-]
-
-type VisitFilter = 'all' | 'no-phone' | 'no-home'
-
-function useVisitStatus(caseId: string) {
-  const { phoneVisits, homeVisits } = useStore()
-  const now = new Date()
-  const thisYear = now.getFullYear()
-  const thisMonth = now.getMonth()
-  const sixMonthsAgo = new Date(now)
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
-
-  const hasPhoneThisMonth = phoneVisits.some(v => {
-    if (v.caseId !== caseId) return false
-    const d = new Date(v.date)
-    return d.getFullYear() === thisYear && d.getMonth() === thisMonth
-  })
-
-  const hasHomeInSixMonths = homeVisits.some(v => {
-    if (v.caseId !== caseId) return false
-    const d = new Date(v.date)
-    return d >= sixMonthsAgo
-  })
-
-  return { hasPhoneThisMonth, hasHomeInSixMonths }
+function parseVisitTarget(raw: string): string {
+  if (!raw) return ''
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) {
+      return parsed.map((p: { name?: string; relation?: string }) =>
+        p.relation ? `${p.name}（${p.relation}）` : p.name || ''
+      ).filter(Boolean).join('、')
+    }
+    if (typeof parsed === 'object' && parsed.name) {
+      return parsed.relation ? `${parsed.name}（${parsed.relation}）` : parsed.name
+    }
+  } catch {}
+  return raw
 }
 
-export default function HomePage() {
-  const { cases, phoneVisits, homeVisits } = useStore()
+function PhoneVisitContent() {
+  const searchParams = useSearchParams()
+  const { cases, sentences, settings, addPhoneVisit, getPhoneVisitsByCase } = useStore()
+
   const [mounted, setMounted] = useState(false)
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('active')
-  const [visitFilter, setVisitFilter] = useState<VisitFilter>('all')
   useEffect(() => { setMounted(true) }, [])
 
+  const activeCases = cases.filter(c => c.status !== 'closed')
+  const [selectedCaseId, setSelectedCaseId] = useState(searchParams.get('caseId') || '')
   const now = new Date()
-  const thisYear = now.getFullYear()
-  const thisMonth = now.getMonth()
-  const sixMonthsAgo = new Date(now)
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+  const [date, setDate] = useState(now.toISOString().split('T')[0])
+  const [time, setTime] = useState(now.toTimeString().slice(0, 5))
+  const [target, setTarget] = useState('')
+  const [customNote, setCustomNote] = useState('')
+  const [generating, setGenerating] = useState(false)
+  const [generated, setGenerated] = useState('')
+  const [error, setError] = useState('')
+  const [saved, setSaved] = useState(false)
+  const [caseSearch, setCaseSearch] = useState('')
+  const [picked, setPicked] = useState<Record<string, string>>({})
 
-  const activeCases = useMemo(() => cases.filter(c => c.status === 'active'), [cases])
+  type GoalKey = 'short' | 'mid' | 'long'
+  const GOAL_STATUSES = ['已完成', '完成＿%', '尚未完成', '持續追蹤', '無法完成'] as const
+  const [goalTracking, setGoalTracking] = useState<Record<GoalKey, { status: string; percent: string }>>({
+    short: { status: '', percent: '' },
+    mid: { status: '', percent: '' },
+    long: { status: '', percent: '' },
+  })
+  const goalLabels: Record<GoalKey, string> = { short: '短期目標', mid: '中期目標', long: '長期目標' }
 
-  const noVisitThisMonth = useMemo(() => activeCases.filter(c => {
-    const hasPhone = phoneVisits.some(v => {
-      if (v.caseId !== c.id) return false
-      const d = new Date(v.date)
-      return d.getFullYear() === thisYear && d.getMonth() === thisMonth
-    })
-    const hasHome = homeVisits.some(v => {
-      if (v.caseId !== c.id) return false
-      const d = new Date(v.date)
-      return d.getFullYear() === thisYear && d.getMonth() === thisMonth
-    })
-    return !hasPhone && !hasHome
-  }), [activeCases, phoneVisits, homeVisits, thisYear, thisMonth])
+  const pickRandom = (pool: Sentence[], exclude?: string) => {
+    const others = exclude ? pool.filter(s => s.text !== exclude) : pool
+    const arr = others.length > 0 ? others : pool
+    return arr[Math.floor(Math.random() * arr.length)]?.text || ''
+  }
 
-  const noHomeInSixMonths = useMemo(() => activeCases.filter(c => {
-    if (c.lastHomeVisitDate) {
-      const d = new Date(c.lastHomeVisitDate)
-      if (!isNaN(d.getTime())) return d < sixMonthsAgo
+  const autoSelect = (caseObj?: Case) => {
+    const newPicked: Record<string, string> = {}
+    for (const cat of CATEGORIES) {
+      const pool = sentences.filter(s => s.category === cat)
+      if (cat === 'service' && caseObj?.services?.length) {
+        const relevant = pool.filter(s =>
+          caseObj.services.some(svc => s.text.includes(svc))
+        )
+        newPicked[cat] = pickRandom(relevant.length > 0 ? relevant : pool)
+      } else {
+        newPicked[cat] = pickRandom(pool)
+      }
     }
-    return !homeVisits.some(v => {
-      if (v.caseId !== c.id) return false
-      return new Date(v.date) >= sixMonthsAgo
-    })
-  }), [activeCases, homeVisits, sixMonthsAgo])
+    setPicked(newPicked)
+  }
 
-  const counts = useMemo(() => ({
-    active: cases.filter(c => c.status === 'active').length,
-    suspended: cases.filter(c => c.status === 'suspended').length,
-    closed: cases.filter(c => c.status === 'closed').length,
-  }), [cases])
+  // Auto-pick on mount once sentences are loaded
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!mounted || sentences.length === 0) return
+    if (Object.keys(picked).length > 0) return
+    autoSelect()
+  }, [mounted, sentences])
 
-  const filtered = useMemo(() => {
-    let pool = cases
-    if (visitFilter === 'no-phone') pool = noVisitThisMonth
-    else if (visitFilter === 'no-home') pool = noHomeInSixMonths
-    else pool = cases.filter(c => statusFilter === 'all' || c.status === statusFilter)
+  const selectedCase = cases.find(c => c.id === selectedCaseId)
+  const recentVisits = selectedCaseId ? getPhoneVisitsByCase(selectedCaseId).slice(0, 2) : []
 
-    const q = search.trim().toLowerCase()
-    if (!q) return pool
-    return pool.filter(c =>
-      c.name.includes(q) ||
-      (c.caseNumber || '').includes(q) ||
-      (c.phone || '').includes(q) ||
-      (c.address || '').toLowerCase().includes(q)
+  const filteredCases = useMemo(() => {
+    const q = caseSearch.trim().toLowerCase()
+    if (!q) return activeCases
+    return activeCases.filter(c =>
+      c.name.includes(q) || (c.caseNumber || '').includes(q) || (c.phone || '').includes(q)
     )
-  }, [cases, search, statusFilter, visitFilter, noVisitThisMonth, noHomeInSixMonths])
+  }, [activeCases, caseSearch])
 
-  if (!mounted) return <div className="text-center py-20 text-gray-400 text-sm">載入中...</div>
+  const hasSentences = CATEGORIES.some(cat => sentences.some(s => s.category === cat))
+
+  const swapOne = (cat: string) => {
+    const pool = sentences.filter(s => s.category === cat)
+    setPicked(prev => ({ ...prev, [cat]: pickRandom(pool, prev[cat]) }))
+  }
+
+  const handleSelectCase = (id: string) => {
+    const c = cases.find(x => x.id === id)
+    setSelectedCaseId(id)
+    setCaseSearch('')
+    setGenerated('')
+    setSaved(false)
+    setTarget(parseVisitTarget(c?.visitTarget || '') || c?.guardian || '')
+    setGoalTracking({ short: { status: '', percent: '' }, mid: { status: '', percent: '' }, long: { status: '', percent: '' } })
+    autoSelect(c)
+  }
+
+  const pickedSentences = CATEGORIES
+    .filter(cat => picked[cat])
+    .map(cat => ({ category: CATEGORY_LABELS[cat], text: picked[cat] }))
+
+  const buildGoalBlock = () => {
+    if (!selectedCase) return ''
+    const goals: { key: GoalKey; text: string }[] = [
+      { key: 'short' as GoalKey, text: selectedCase.shortGoal || '' },
+      { key: 'mid' as GoalKey, text: selectedCase.midGoal || '' },
+      { key: 'long' as GoalKey, text: selectedCase.longGoal || '' },
+    ].filter(g => g.text)
+    if (goals.length === 0) return ''
+    const lines = goals.map(g => {
+      const t = goalTracking[g.key]
+      const statusText = t.status === '完成＿%' ? `完成${t.percent || '?'}%` : t.status
+      return `${goalLabels[g.key]}：${g.text}\n　→ ${statusText || '（未填）'}`
+    })
+    return `\n【目標追蹤進度】\n${lines.join('\n')}`
+  }
+
+  const handleQuickCombine = () => {
+    if (!selectedCase) { setError('請選擇個案'); return }
+    if (pickedSentences.length === 0) { setError('句型庫為空，請先到「設定」頁面按「重設預設句型庫」'); return }
+    const d = new Date(date)
+    const year = d.getFullYear() - 1911
+    const month = d.getMonth() + 1
+    const day = d.getDate()
+    const visitTarget = target || selectedCase.guardian || selectedCase.name
+    const content = pickedSentences.map(s => s.text).join(pickedSentences.length > 1 ? '　' : '')
+    const goalBlock = buildGoalBlock()
+    const result = `一、電訪日期：民國${year}年${month}月${day}日 ${time}
+二、電訪對象：${visitTarget}
+三、訪談內容：
+${content}${customNote ? `　${customNote}` : ''}
+${goalBlock}
+一、照顧及專業服務：服務穩定無須異動。
+二、交通接送服務：暫無新增照會。
+三、輔具及居家無障礙環境改善：無新增需求。
+四、喘息服務：與案家屬確認暫無需求。
+五、轉介其他資源：無轉介。`
+    setGenerated(result)
+    setSaved(false)
+    setError('')
+  }
+
+  const handleGenerate = async () => {
+    if (!selectedCase) { setError('請選擇個案'); return }
+    if (!settings.claudeApiKey) { setError('請先在「設定」頁面填入 Claude API Key'); return }
+    if (pickedSentences.length === 0) { setError('句型庫為空，請先到「設定」頁面新增電訪句型'); return }
+    setGenerating(true)
+    setError('')
+    setGenerated('')
+    setSaved(false)
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: buildPrompt(selectedCase, pickedSentences, customNote + buildGoalBlock(), target, `${date} ${time}`, settings.managerName),
+          apiKey: settings.claudeApiKey,
+        }),
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setGenerated(data.content)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : '產生失敗，請再試一次')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const handleSave = async () => {
+    if (!selectedCase || !generated) return
+    const visit = {
+      id: Date.now().toString(),
+      caseId: selectedCase.id,
+      caseName: selectedCase.name,
+      date: `${date} ${time}`,
+      target: target || selectedCase.guardian || selectedCase.name,
+      content: generated,
+      createdAt: new Date().toISOString(),
+    }
+    addPhoneVisit(visit)
+    setSaved(true)
+    if (settings.appsScriptUrl) {
+      try {
+        await fetch('/api/save-visit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            appsScriptUrl: settings.appsScriptUrl,
+            sheetName: settings.phoneVisitSheetName || '電訪紀錄',
+            record: {
+              caseId: selectedCase.caseNumber || selectedCase.id,
+              date: `${date} ${time}`,
+              caseNumber: selectedCase.caseNumber || '',
+              caseName: selectedCase.name,
+              method: '電訪',
+              target: visit.target,
+              content: generated,
+            },
+          }),
+        })
+      } catch {}
+    }
+  }
+
+  if (!mounted) {
+    return <div className="text-center py-20 text-gray-400 text-sm">載入中...</div>
+  }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold text-gray-800">個案列表</h2>
-        <div className="flex gap-2 text-sm">
-          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full font-medium">在案 {counts.active}</span>
-          <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full font-medium">暫停 {counts.suspended}</span>
-          <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full font-medium">結案 {counts.closed}</span>
-        </div>
-      </div>
+    <div className="max-w-6xl">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">電訪紀錄產生</h2>
 
-      {/* 待訪視提醒 */}
-      {cases.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <button
-            onClick={() => setVisitFilter(v => v === 'no-phone' ? 'all' : 'no-phone')}
-            className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${
-              visitFilter === 'no-phone'
-                ? 'bg-red-50 border-red-200 ring-2 ring-red-200'
-                : 'bg-white border-gray-100 hover:border-red-200'
-            }`}
-          >
-            <div className="text-left">
-              <p className="text-xs text-gray-500">本月未訪視</p>
-              <p className="text-2xl font-bold text-red-500">{noVisitThisMonth.length}</p>
-              <p className="text-xs text-gray-400">位在案個案</p>
-            </div>
-            <span className="text-2xl">📋</span>
-          </button>
-          <button
-            onClick={() => setVisitFilter(v => v === 'no-home' ? 'all' : 'no-home')}
-            className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${
-              visitFilter === 'no-home'
-                ? 'bg-orange-50 border-orange-200 ring-2 ring-orange-200'
-                : 'bg-white border-gray-100 hover:border-orange-200'
-            }`}
-          >
-            <div className="text-left">
-              <p className="text-xs text-gray-500">6個月未家訪</p>
-              <p className="text-2xl font-bold text-orange-500">{noHomeInSixMonths.length}</p>
-              <p className="text-xs text-gray-400">位在案個案</p>
-            </div>
-            <span className="text-2xl">🏠</span>
-          </button>
+      {!hasSentences && (
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-amber-700 text-sm">
+          句型庫尚無資料，請先到
+          <a href="/settings" className="underline font-medium mx-1">設定頁面</a>
+          新增電訪句型，才能使用本功能。
         </div>
       )}
 
-      <div className="flex gap-3 mb-4">
-        <input
-          type="text"
-          placeholder="搜尋姓名、個案編號、電話、地址..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788] bg-white"
-        />
-        {visitFilter === 'all' && (
-          <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1">
-            {STATUS_FILTERS.map(f => (
-              <button
-                key={f.value}
-                onClick={() => setStatusFilter(f.value)}
-                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                  statusFilter === f.value
-                    ? 'bg-[#2d6a4f] text-white font-medium'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
+      <div className="grid grid-cols-[280px,1fr] gap-6">
+        {/* ── 左側 ── */}
+        <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-gray-100 p-4">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">選擇個案</label>
+            <input
+              type="text"
+              placeholder="搜尋姓名 / 編號…"
+              value={caseSearch}
+              onChange={e => setCaseSearch(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+            />
+            <div className="max-h-52 overflow-y-auto space-y-0.5">
+              {filteredCases.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => handleSelectCase(c.id)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                    selectedCaseId === c.id
+                      ? 'bg-[#d8f3dc] text-[#2d6a4f] font-medium'
+                      : 'hover:bg-gray-50 text-gray-700'
+                  }`}
+                >
+                  <div className="font-medium">{c.name}</div>
+                  {c.caseNumber && <div className="text-xs text-gray-400">{c.caseNumber}</div>}
+                </button>
+              ))}
+              {filteredCases.length === 0 && (
+                <p className="text-sm text-gray-400 px-3 py-2">找不到個案</p>
+              )}
+            </div>
           </div>
-        )}
-        {visitFilter !== 'all' && (
-          <button
-            onClick={() => setVisitFilter('all')}
-            className="px-4 py-2 text-sm text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50"
-          >
-            ✕ 清除篩選
-          </button>
-        )}
+
+          <div className="bg-white rounded-xl border border-gray-100 p-4 space-y-3">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">電訪日期</label>
+              <input
+                type="date"
+                value={date}
+                onChange={e => setDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">電訪時間</label>
+              <input
+                type="time"
+                value={time}
+                onChange={e => setTime(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">電訪對象</label>
+              <input
+                type="text"
+                value={target}
+                onChange={e => setTarget(e.target.value)}
+                placeholder={selectedCase?.guardian || '個案或照顧者姓名'}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+              />
+            </div>
+          </div>
+
+          {selectedCase && (
+            <div className="bg-[#d8f3dc] rounded-xl p-4">
+              <p className="font-semibold text-[#2d6a4f] text-sm">{selectedCase.name}</p>
+              {selectedCase.careLevel && (
+                <p className="text-xs text-[#2d6a4f]/70 mt-1">照顧等級：{selectedCase.careLevel}</p>
+              )}
+              {selectedCase.services && selectedCase.services.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {selectedCase.services.map((s, i) => (
+                    <span key={i} className="text-xs bg-white/60 text-[#2d6a4f] px-1.5 py-0.5 rounded-full">{s}</span>
+                  ))}
+                </div>
+              )}
+              {recentVisits.length > 0 && (
+                <p className="text-xs text-[#2d6a4f]/50 mt-1.5">上次電訪：{recentVisits[0].date}</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── 右側 ── */}
+        <div className="space-y-4">
+          {/* 句型區 */}
+          <div className="bg-white rounded-xl border border-gray-100 p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="font-semibold text-gray-700">本次電訪句型</h3>
+                <p className="text-xs text-gray-400 mt-0.5">四個類別各隨機抽一句，可點「換一句」替換</p>
+              </div>
+              <button
+                onClick={() => autoSelect(selectedCase)}
+                disabled={!hasSentences}
+                className="px-3 py-1.5 text-sm border border-[#52b788] text-[#2d6a4f] rounded-lg hover:bg-[#d8f3dc] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                🔀 重新隨機
+              </button>
+            </div>
+
+            {!hasSentences ? (
+              <div className="text-center py-8 text-gray-400">
+                <p className="text-sm">句型庫為空，請先到「設定」新增句型</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {CATEGORIES.map(cat => {
+                  const text = picked[cat] || ''
+                  const pool = sentences.filter(s => s.category === cat)
+                  return (
+                    <div key={cat} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                      <div className="flex-1 min-w-0">
+                        <span className="inline-block text-xs font-semibold text-[#2d6a4f] bg-[#d8f3dc] px-1.5 py-0.5 rounded mr-2 mb-1">
+                          {CATEGORY_LABELS[cat]}
+                        </span>
+                        <span className="text-sm text-gray-700 leading-relaxed">
+                          {text || <span className="text-gray-400 italic">（無相關句型）</span>}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => swapOne(cat)}
+                        disabled={pool.length === 0}
+                        className="flex-shrink-0 text-xs text-gray-400 hover:text-[#2d6a4f] border border-gray-200 hover:border-[#52b788] rounded px-2 py-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        換一句
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* 目標追蹤 */}
+          {selectedCase && (selectedCase.shortGoal || selectedCase.midGoal || selectedCase.longGoal) && (
+            <div className="bg-white rounded-xl border border-gray-100 p-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">目標追蹤進度</h3>
+              <div className="space-y-3">
+                {(['short', 'mid', 'long'] as GoalKey[]).map(key => {
+                  const goalText = key === 'short' ? selectedCase.shortGoal : key === 'mid' ? selectedCase.midGoal : selectedCase.longGoal
+                  if (!goalText) return null
+                  const tracking = goalTracking[key]
+                  return (
+                    <div key={key} className="p-3 bg-gray-50 rounded-lg">
+                      <p className="text-xs font-semibold text-[#2d6a4f] mb-1">{goalLabels[key]}</p>
+                      <p className="text-sm text-gray-700 mb-2">{goalText}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {GOAL_STATUSES.map(s => (
+                          <button
+                            key={s}
+                            onClick={() => setGoalTracking(p => ({ ...p, [key]: { ...p[key], status: s } }))}
+                            className={`px-2.5 py-1 text-xs rounded-lg border transition-colors ${
+                              tracking.status === s
+                                ? 'bg-[#2d6a4f] text-white border-[#2d6a4f]'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-[#52b788]'
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                        {tracking.status === '完成＿%' && (
+                          <input
+                            type="number"
+                            min={0} max={100}
+                            value={tracking.percent}
+                            onChange={e => setGoalTracking(p => ({ ...p, [key]: { ...p[key], percent: e.target.value } }))}
+                            placeholder="百分比"
+                            className="w-20 px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#52b788]"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 補充說明 */}
+          <div className="bg-white rounded-xl border border-gray-100 p-4">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              個案其他狀況補充
+              <span className="font-normal text-gray-400 ml-1">（選填，AI 會一併融入電訪紀錄）</span>
+            </label>
+            <textarea
+              value={customNote}
+              onChange={e => setCustomNote(e.target.value)}
+              placeholder="例：個案本週回診，醫師調整血壓藥劑量；照顧者反應近期較疲憊，詢問喘息服務…"
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788] resize-none"
+            />
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-red-600 text-sm">{error}</div>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              onClick={handleQuickCombine}
+              disabled={!selectedCaseId || pickedSentences.length === 0 || !hasSentences}
+              className="flex-1 py-3 bg-white border-2 border-[#2d6a4f] text-[#2d6a4f] rounded-xl font-semibold hover:bg-[#d8f3dc] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              ⚡ 直接組合
+            </button>
+            <button
+              onClick={handleGenerate}
+              disabled={generating || !selectedCaseId || pickedSentences.length === 0 || !hasSentences}
+              className="flex-1 py-3 bg-[#2d6a4f] text-white rounded-xl font-semibold hover:bg-[#1b4332] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            >
+              {generating ? (
+                <>
+                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  AI 改寫中…
+                </>
+              ) : '✨ AI 潤飾'}
+            </button>
+          </div>
+
+          {generated && (
+            <div className="bg-white rounded-xl border border-gray-100 p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-gray-700">產生結果</h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setGenerated(''); setSaved(false) }}
+                    className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-gray-500"
+                  >
+                    重新產生
+                  </button>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(generated)}
+                    className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    📋 複製
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={saved}
+                    className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
+                      saved ? 'bg-green-100 text-green-700' : 'bg-[#2d6a4f] text-white hover:bg-[#1b4332]'
+                    }`}
+                  >
+                    {saved ? '✓ 已儲存' : '💾 儲存'}
+                  </button>
+                </div>
+              </div>
+              <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans leading-relaxed bg-gray-50 rounded-lg p-4">{generated}</pre>
+            </div>
+          )}
+        </div>
       </div>
-
-      {visitFilter !== 'all' && (
-        <div className={`mb-3 px-4 py-2 rounded-lg text-sm font-medium ${
-          visitFilter === 'no-phone' ? 'bg-red-50 text-red-700' : 'bg-orange-50 text-orange-700'
-        }`}>
-          {visitFilter === 'no-phone' ? `📋 本月（${thisMonth + 1}月）尚未訪視的在案個案` : '🏠 近6個月尚未家訪的在案個案'}
-          {' '}共 {filtered.length} 位
-        </div>
-      )}
-
-      {cases.length === 0 ? (
-        <div className="text-center py-24 text-gray-400">
-          <p className="text-5xl mb-4">☁️</p>
-          <p className="text-lg font-medium mb-1">尚無個案資料</p>
-          <p className="text-sm">請點擊左側「同步個案」按鈕，從 Google Sheet 載入資料</p>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          <p>{search ? `找不到符合「${search}」的個案` : '所有個案均已完成訪視'}</p>
-        </div>
-      ) : (
-        <div className="grid gap-2">
-          {filtered.map(c => <CaseRow key={c.id} case_={c} visitFilter={visitFilter} />)}
-        </div>
-      )}
     </div>
   )
 }
 
-function CaseRow({ case_: c, visitFilter }: { case_: Case; visitFilter: VisitFilter }) {
-  const { hasPhoneThisMonth, hasHomeInSixMonths } = useVisitStatus(c.id)
-
+export default function PhoneVisitPage() {
   return (
-    <Link
-      href={`/cases/${c.id}`}
-      className="flex items-center gap-4 bg-white rounded-xl border border-gray-100 px-5 py-3.5 hover:shadow-md hover:border-[#52b788]/40 transition-all group"
-    >
-      <div className="w-9 h-9 rounded-full bg-[#d8f3dc] flex items-center justify-center text-[#2d6a4f] font-bold text-sm flex-shrink-0">
-        {c.name?.[0] || '?'}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-gray-800 group-hover:text-[#2d6a4f] transition-colors">{c.name}</span>
-          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLOR[c.status] || STATUS_COLOR.active}`}>
-            {STATUS_LABEL[c.status] || '在案'}
-          </span>
-          {c.status === 'active' && !hasPhoneThisMonth && !hasHomeInSixMonths && (
-            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">未訪視</span>
-          )}
-          {c.status === 'active' && !hasHomeInSixMonths && (
-            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-600">未家訪</span>
-          )}
-        </div>
-        <div className="flex gap-4 mt-0.5 text-sm text-gray-400">
-          {c.caseNumber && <span>編號 {c.caseNumber}</span>}
-          {c.careLevel && <span>等級 {c.careLevel}</span>}
-          {c.guardian && <span>照顧者 {c.guardian}</span>}
-        </div>
-      </div>
-      <div className="text-right text-sm text-gray-400 flex-shrink-0 hidden sm:block">
-        {c.phone && <div>{c.phone}</div>}
-        {c.address && <div className="truncate max-w-[180px] text-xs mt-0.5">{c.address}</div>}
-      </div>
-      <span className="text-gray-300 group-hover:text-[#2d6a4f] transition-colors text-lg">›</span>
-    </Link>
+    <Suspense fallback={<div className="text-center py-20 text-gray-400">載入中...</div>}>
+      <PhoneVisitContent />
+    </Suspense>
   )
 }
