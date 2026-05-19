@@ -256,6 +256,7 @@ function HomeVisitContent() {
   const [careGoals, setCareGoals] = useState({ short: '', mid: '', long: '' })
   const [goalSyncing, setGoalSyncing] = useState(false)
   const [goalSynced, setGoalSynced] = useState(false)
+  const [servicesNoNeeds, setServicesNoNeeds] = useState(false)
 
   // ── Care Plan
   const [noServiceNeeded, setNoServiceNeeded] = useState(false)
@@ -444,7 +445,8 @@ function HomeVisitContent() {
     setDraftLabel('')
   }
 
-  const handleDeleteDraft = async (ts: string) => {
+  const handleDeleteDraft = async (ts: string) => {   
+    const serviceList = servicesNoNeeds ? '暫無需求' : (services.map(...).join('；') || '（尚未填寫）') 
     if (!selectedCase) return
     const caseNumber = selectedCase.caseNumber || selectedCase.id
     setDrafts(prev => prev.filter(d => d.ts !== ts))
@@ -1443,16 +1445,15 @@ ${problemSection}
 
                 {/* Services */}
                 <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3 mb-2">
                     <SectionLabel>照顧及專業服務</SectionLabel>
-                    <label className="flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                    <label className="flex items-center gap-1.5 cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={noServiceNeeded}
-                        onChange={e => setNoServiceNeeded(e.target.checked)}
-                        className="accent-[#2d6a4f] w-4 h-4"
-                      />
-                      暫無需求
+                        checked={servicesNoNeeds}
+                        onChange={e => setServicesNoNeeds(e.target.checked)}
+                        className="accent-[#2d6a4f] w-4 h-4" />
+                       <span className="text-sm text-gray-700">暫無需求</span>
                     </label>
                   </div>
                   {!noServiceNeeded && <>
