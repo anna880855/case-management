@@ -13,7 +13,7 @@ const STATUS_OPTIONS: { value: Case['status']; label: string; color: string }[] 
 
 export default function CaseDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter()
-  const { getCaseById, getPhoneVisitsByCase, getHomeVisitsByCase, updateCaseStatus, deleteCase, settings } = useStore()
+  const { getCaseById, getPhoneVisitsByCase, getHomeVisitsByCase, updateCaseStatus, updateCase, deleteCase, settings } = useStore()
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
   const c = getCaseById(params.id)
@@ -22,6 +22,9 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
   const [syncMsg, setSyncMsg] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editFields, setEditFields] = useState<Partial<Case>>({})
+  const [saving, setSaving] = useState(false)
 
   if (!mounted) return <div className="text-center py-20 text-gray-400 text-sm">載入中...</div>
 
@@ -36,6 +39,58 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
   }
 
   const currentStatus = STATUS_OPTIONS.find(s => s.value === c.status) || STATUS_OPTIONS[0]
+
+  const startEditing = () => {
+    setEditFields({
+      name: c.name,
+      caseNumber: c.caseNumber,
+      phone: c.phone,
+      address: c.address,
+      birthDate: c.birthDate,
+      idNumber: c.idNumber,
+      gender: c.gender || '',
+      startDate: c.startDate,
+      careLevel: c.careLevel,
+      disability: c.disability,
+      guardian: c.guardian,
+      guardianPhone: c.guardianPhone,
+      visitTarget: c.visitTarget || '',
+      lastHomeVisitDate: c.lastHomeVisitDate || '',
+      notes: c.notes,
+      notes2: c.notes2 || '',
+      shortGoal: c.shortGoal || '',
+      midGoal: c.midGoal || '',
+      longGoal: c.longGoal || '',
+      responsibleWorker: c.responsibleWorker || '',
+    })
+    setEditing(true)
+  }
+
+  const handleEditSave = async () => {
+    setSaving(true)
+    updateCase(c.id, editFields)
+    setSyncMsg('更新中...')
+    try {
+      const res = await fetch('/api/update-case', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          appsScriptUrl: settings.appsScriptUrl,
+          action: 'updateCase',
+          caseName: c.name,
+          caseNumber: c.caseNumber,
+          fields: editFields,
+        }),
+      })
+      const data = await res.json()
+      setSyncMsg(data.synced ? '✓ 已同步至 Google Sheet' : '✓ 已更新（未同步 Google Sheet）')
+    } catch {
+      setSyncMsg('✓ 已更新（未同步 Google Sheet）')
+    }
+    setSaving(false)
+    setEditing(false)
+    setTimeout(() => setSyncMsg(''), 4000)
+  }
 
   const handleStatusChange = async (newStatus: Case['status']) => {
     if (newStatus === c.status) return
@@ -79,6 +134,8 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
     router.push('/')
   }
 
+  const ef = editFields
+
   return (
     <div className="max-w-5xl">
       <div className="flex items-center gap-3 mb-6">
@@ -88,6 +145,7 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
         <span className={`px-2.5 py-0.5 rounded-full text-sm font-medium ${currentStatus.color}`}>
           {currentStatus.label}
         </span>
+        {syncMsg && <span className="text-xs text-[#2d6a4f] ml-1">{syncMsg}</span>}
       </div>
 
       {/* Status change */}
@@ -108,61 +166,144 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
             </button>
           ))}
         </div>
-        {syncMsg && (
-          <span className="text-xs text-[#2d6a4f] ml-2">{syncMsg}</span>
-        )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-5">
-        <div className="bg-white rounded-xl border border-gray-100 p-5">
-          <h3 className="font-semibold text-gray-700 mb-4 pb-2 border-b border-gray-50">基本資料</h3>
-          <dl className="space-y-2.5">
-            <InfoRow label="個案編號" value={c.caseNumber} />
-            <InfoRow label="性別" value={c.gender} />
-            <InfoRow label="生日" value={c.birthDate} />
-            <InfoRow label="身分證" value={c.idNumber} />
-            <InfoRow label="電話" value={c.phone} />
-            <InfoRow label="地址" value={c.address} />
-            <InfoRow label="開案日期" value={c.startDate} />
-            <InfoRow label="負責社工" value={c.responsibleWorker} />
-          </dl>
+      {/* Edit form */}
+      {editing ? (
+        <div className="bg-white rounded-xl border border-[#52b788]/40 p-5 mb-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-gray-700">編輯個案資料</h3>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setEditing(false)}
+                className="px-4 py-1.5 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleEditSave}
+                disabled={saving}
+                className="px-4 py-1.5 text-sm bg-[#2d6a4f] text-white rounded-lg hover:bg-[#1b4332] disabled:opacity-50"
+              >
+                {saving ? '儲存中...' : '儲存並同步'}
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">基本資料</p>
+              <EditField label="姓名" value={ef.name || ''} onChange={v => setEditFields(p => ({ ...p, name: v }))} />
+              <EditField label="個案編號" value={ef.caseNumber || ''} onChange={v => setEditFields(p => ({ ...p, caseNumber: v }))} />
+              <EditField label="性別" value={ef.gender || ''} onChange={v => setEditFields(p => ({ ...p, gender: v }))} />
+              <EditField label="生日" value={ef.birthDate || ''} onChange={v => setEditFields(p => ({ ...p, birthDate: v }))} />
+              <EditField label="身分證" value={ef.idNumber || ''} onChange={v => setEditFields(p => ({ ...p, idNumber: v }))} />
+              <EditField label="電話" value={ef.phone || ''} onChange={v => setEditFields(p => ({ ...p, phone: v }))} />
+              <EditField label="地址" value={ef.address || ''} onChange={v => setEditFields(p => ({ ...p, address: v }))} />
+              <EditField label="開案日期" value={ef.startDate || ''} onChange={v => setEditFields(p => ({ ...p, startDate: v }))} />
+              <EditField label="負責社工" value={ef.responsibleWorker || ''} onChange={v => setEditFields(p => ({ ...p, responsibleWorker: v }))} />
+            </div>
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">照顧資訊</p>
+              <EditField label="身障類別" value={ef.disability || ''} onChange={v => setEditFields(p => ({ ...p, disability: v }))} />
+              <EditField label="照顧等級" value={ef.careLevel || ''} onChange={v => setEditFields(p => ({ ...p, careLevel: v }))} />
+              <EditField label="電訪對象" value={ef.visitTarget || ''} onChange={v => setEditFields(p => ({ ...p, visitTarget: v }))} />
+              <EditField label="主要照顧者" value={ef.guardian || ''} onChange={v => setEditFields(p => ({ ...p, guardian: v }))} />
+              <EditField label="照顧者電話" value={ef.guardianPhone || ''} onChange={v => setEditFields(p => ({ ...p, guardianPhone: v }))} />
+              <EditField label="最近家訪日" value={ef.lastHomeVisitDate || ''} onChange={v => setEditFields(p => ({ ...p, lastHomeVisitDate: v }))} />
+              <EditField label="短期目標" value={ef.shortGoal || ''} onChange={v => setEditFields(p => ({ ...p, shortGoal: v }))} />
+              <EditField label="中期目標" value={ef.midGoal || ''} onChange={v => setEditFields(p => ({ ...p, midGoal: v }))} />
+              <EditField label="長期目標" value={ef.longGoal || ''} onChange={v => setEditFields(p => ({ ...p, longGoal: v }))} />
+            </div>
+          </div>
+          <div className="mt-4 space-y-3">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">備註</p>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">備註1</label>
+              <textarea
+                value={ef.notes || ''}
+                onChange={e => setEditFields(p => ({ ...p, notes: e.target.value }))}
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">備註2</label>
+              <textarea
+                value={ef.notes2 || ''}
+                onChange={e => setEditFields(p => ({ ...p, notes2: e.target.value }))}
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+              />
+            </div>
+          </div>
         </div>
-
-        <div className="bg-white rounded-xl border border-gray-100 p-5">
-          <h3 className="font-semibold text-gray-700 mb-4 pb-2 border-b border-gray-50">照顧資訊</h3>
-          <dl className="space-y-2.5">
-            <InfoRow label="身障類別" value={c.disability} />
-            <InfoRow label="電訪對象" value={c.visitTarget} />
-            <InfoRow label="主要照顧者" value={c.guardian} />
-            <InfoRow label="照顧者電話" value={c.guardianPhone} />
-            <InfoRow label="最近家訪日" value={c.lastHomeVisitDate} />
-          </dl>
-          {c.services && c.services.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-gray-50">
-              <dt className="text-xs text-gray-400 mb-1.5">服務項目</dt>
-              <div className="flex flex-wrap gap-1">
-                {c.services.map((s, i) => (
-                  <span key={i} className="px-2 py-0.5 bg-[#d8f3dc] text-[#2d6a4f] rounded-full text-xs font-medium">{s}</span>
-                ))}
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-4 mb-5">
+            <div className="bg-white rounded-xl border border-gray-100 p-5">
+              <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-50">
+                <h3 className="font-semibold text-gray-700">基本資料</h3>
               </div>
+              <dl className="space-y-2.5">
+                <InfoRow label="個案編號" value={c.caseNumber} />
+                <InfoRow label="性別" value={c.gender} />
+                <InfoRow label="生日" value={c.birthDate} />
+                <InfoRow label="身分證" value={c.idNumber} />
+                <InfoRow label="電話" value={c.phone} />
+                <InfoRow label="地址" value={c.address} />
+                <InfoRow label="開案日期" value={c.startDate} />
+                <InfoRow label="負責社工" value={c.responsibleWorker} />
+              </dl>
             </div>
-          )}
-          {(c.shortGoal || c.midGoal || c.longGoal) && (
-            <div className="mt-3 pt-3 border-t border-gray-50 space-y-1.5">
-              <p className="text-xs text-gray-400 mb-1">照顧目標</p>
-              <InfoRow label="短期目標" value={c.shortGoal} />
-              <InfoRow label="中期目標" value={c.midGoal} />
-              <InfoRow label="長期目標" value={c.longGoal} />
-            </div>
-          )}
-        </div>
-      </div>
 
-      {(c.notes || c.notes2) && (
-        <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 mb-5">
-          <h3 className="font-medium text-amber-800 mb-1 text-sm">備註</h3>
-          {c.notes && <p className="text-sm text-amber-700 whitespace-pre-wrap">{c.notes}</p>}
-          {c.notes2 && <p className="text-sm text-amber-700 whitespace-pre-wrap mt-1">{c.notes2}</p>}
+            <div className="bg-white rounded-xl border border-gray-100 p-5">
+              <h3 className="font-semibold text-gray-700 mb-4 pb-2 border-b border-gray-50">照顧資訊</h3>
+              <dl className="space-y-2.5">
+                <InfoRow label="身障類別" value={c.disability} />
+                <InfoRow label="電訪對象" value={c.visitTarget} />
+                <InfoRow label="主要照顧者" value={c.guardian} />
+                <InfoRow label="照顧者電話" value={c.guardianPhone} />
+                <InfoRow label="最近家訪日" value={c.lastHomeVisitDate} />
+              </dl>
+              {c.services && c.services.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-gray-50">
+                  <dt className="text-xs text-gray-400 mb-1.5">服務項目</dt>
+                  <div className="flex flex-wrap gap-1">
+                    {c.services.map((s, i) => (
+                      <span key={i} className="px-2 py-0.5 bg-[#d8f3dc] text-[#2d6a4f] rounded-full text-xs font-medium">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(c.shortGoal || c.midGoal || c.longGoal) && (
+                <div className="mt-3 pt-3 border-t border-gray-50 space-y-1.5">
+                  <p className="text-xs text-gray-400 mb-1">照顧目標</p>
+                  <InfoRow label="短期目標" value={c.shortGoal} />
+                  <InfoRow label="中期目標" value={c.midGoal} />
+                  <InfoRow label="長期目標" value={c.longGoal} />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {(c.notes || c.notes2) && (
+            <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 mb-5">
+              <h3 className="font-medium text-amber-800 mb-1 text-sm">備註</h3>
+              {c.notes && <p className="text-sm text-amber-700 whitespace-pre-wrap">{c.notes}</p>}
+              {c.notes2 && <p className="text-sm text-amber-700 whitespace-pre-wrap mt-1">{c.notes2}</p>}
+            </div>
+          )}
+        </>
+      )}
+
+      {!editing && (
+        <div className="mb-5">
+          <button
+            onClick={startEditing}
+            className="px-4 py-2 text-sm text-[#2d6a4f] border border-[#52b788] rounded-lg hover:bg-[#d8f3dc] transition-colors"
+          >
+            ✏️ 編輯個案資料
+          </button>
         </div>
       )}
 
@@ -222,6 +363,20 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function EditField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <label className="block text-xs text-gray-400 mb-1">{label}</label>
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+      />
     </div>
   )
 }

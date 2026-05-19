@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useMemo, Suspense } from 'react'
+import React, { useState, useMemo, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useStore } from '@/lib/store'
 import {
@@ -175,7 +175,7 @@ const TABS = ['疾病史', '個案摘述', '照顧者評估', '問題清單', '�
 
 function HomeVisitContent() {
   const searchParams = useSearchParams()
-  const { cases, settings, addHomeVisit, getHomeVisitsByCase } = useStore()
+  const { cases, settings, addHomeVisit, getHomeVisitsByCase, updateCase } = useStore()
 
   const todayStr = new Date().toISOString().split('T')[0]
   const activeCases = cases.filter(c => c.status !== 'closed')
@@ -254,8 +254,10 @@ function HomeVisitContent() {
 
   // ── Care goals
   const [careGoals, setCareGoals] = useState({ short: '', mid: '', long: '' })
-
+  const [goalSyncing, setGoalSyncing] = useState(false)
+  const [goalSynced, setGoalSynced] = useState(false)
   // ── Care Plan
+  const [serviceEnabled, setServiceEnabled] = useState(false)
   const [services, setServices] = useState<{ id: string; category: string; code: string; name: string; units: string }[]>([])
   const [showServiceDropdown, setShowServiceDropdown] = useState(false)
   const [customServiceName, setCustomServiceName] = useState('')
@@ -287,6 +289,13 @@ function HomeVisitContent() {
   const [genGoals, setGenGoals] = useState(false)
   const [genFinal, setGenFinal] = useState(false)
 
+  // ── Drafts
+  const [drafts, setDrafts] = useState<{ caseNumber: string; ts: string; label: string; data: string }[]>([])
+  const [draftLoading, setDraftLoading] = useState(false)
+  const [savingDraft, setSavingDraft] = useState(false)
+  const [showDraftSave, setShowDraftSave] = useState(false)
+  const [draftLabel, setDraftLabel] = useState('')
+
   // ── Derived
   const selectedCase = cases.find(c => c.id === selectedCaseId)
   const recentVisits = selectedCaseId ? getHomeVisitsByCase(selectedCaseId).slice(0, 2) : []
@@ -301,6 +310,151 @@ function HomeVisitContent() {
 
   const toggle = (arr: string[], val: string) =>
     arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val]
+
+  // ── Draft helpers
+  const getDraftData = () => ({
+    visitTarget, date,
+    diseaseChecked, diseaseSubs, diseaseTexts, returnVisit, hospital,
+    medicationStatus, medicationNotes, diseaseGenerated,
+    memory, cognition, emotion, consciousness, comprehension, expression, vision, hearing,
+    physiological, ampLocation, toiletingStatus, bowel, incontinence, bathing,
+    sleep, sleepInsomniaMed, sleepInsomniaReason, aids, tubes, residentialCare, dialysisLocation,
+    mealPrep, eatingMethod, teethStatus, utensilMethod, tubeFeedingCans, choking, dietTexture, calories, nutritionExtra,
+    grossMotor, riseAbility, fallFrequency, fallCount,
+    caseOther, caseGenerated, caregiverInput, caregiverGenerated,
+    selectedProblems, rankedProblems, problemExplanations,
+    careGoals, services,
+    transportation, transportHospital, transportEnabled, aidsDetail,
+    respiteEnabled, respiteStartYear, respiteStartMonth, respiteEndYear, respiteEndMonth,
+    respiteAsOfMonth, respiteRemaining, respiteItems,
+    serviceEnabled, referral, finalDoc,
+  })
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const loadDraftData = (d: Record<string, any>) => {
+    if (d.visitTarget !== undefined) setVisitTarget(d.visitTarget)
+    if (d.date) setDate(d.date)
+    if (d.diseaseChecked) setDiseaseChecked(d.diseaseChecked)
+    if (d.diseaseSubs) setDiseaseSubs(d.diseaseSubs)
+    if (d.diseaseTexts) setDiseaseTexts(d.diseaseTexts)
+    if (d.returnVisit) setReturnVisit(d.returnVisit)
+    if (d.hospital !== undefined) setHospital(d.hospital)
+    if (d.medicationStatus) setMedicationStatus(d.medicationStatus)
+    if (d.medicationNotes) setMedicationNotes(d.medicationNotes)
+    if (d.diseaseGenerated !== undefined) setDiseaseGenerated(d.diseaseGenerated)
+    if (d.memory !== undefined) setMemory(d.memory)
+    if (d.cognition) setCognition(d.cognition)
+    if (d.emotion) setEmotion(d.emotion)
+    if (d.consciousness !== undefined) setConsciousness(d.consciousness)
+    if (d.comprehension !== undefined) setComprehension(d.comprehension)
+    if (d.expression) setExpression(d.expression)
+    if (d.vision) setVision(d.vision)
+    if (d.hearing) setHearing(d.hearing)
+    if (d.physiological) setPhysiological(d.physiological)
+    if (d.ampLocation !== undefined) setAmpLocation(d.ampLocation)
+    if (d.toiletingStatus) setToiletingStatus(d.toiletingStatus)
+    if (d.bowel) setBowel(d.bowel)
+    if (d.incontinence) setIncontinence(d.incontinence)
+    if (d.bathing !== undefined) setBathing(d.bathing)
+    if (d.sleep) setSleep(d.sleep)
+    if (d.sleepInsomniaMed) setSleepInsomniaMed(d.sleepInsomniaMed)
+    if (d.sleepInsomniaReason) setSleepInsomniaReason(d.sleepInsomniaReason)
+    if (d.aids) setAids(d.aids)
+    if (d.tubes) setTubes(d.tubes)
+    if (d.residentialCare !== undefined) setResidentialCare(d.residentialCare)
+    if (d.dialysisLocation !== undefined) setDialysisLocation(d.dialysisLocation)
+    if (d.mealPrep) setMealPrep(d.mealPrep)
+    if (d.eatingMethod) setEatingMethod(d.eatingMethod)
+    if (d.teethStatus) setTeethStatus(d.teethStatus)
+    if (d.utensilMethod) setUtensilMethod(d.utensilMethod)
+    if (d.tubeFeedingCans !== undefined) setTubeFeedingCans(d.tubeFeedingCans)
+    if (d.choking) setChoking(d.choking)
+    if (d.dietTexture) setDietTexture(d.dietTexture)
+    if (d.calories) setCalories(d.calories)
+    if (d.nutritionExtra !== undefined) setNutritionExtra(d.nutritionExtra)
+    if (d.grossMotor !== undefined) setGrossMotor(d.grossMotor)
+    if (d.riseAbility !== undefined) setRiseAbility(d.riseAbility)
+    if (d.fallFrequency !== undefined) setFallFrequency(d.fallFrequency)
+    if (d.fallCount !== undefined) setFallCount(d.fallCount)
+    if (d.caseOther !== undefined) setCaseOther(d.caseOther)
+    if (d.caseGenerated !== undefined) setCaseGenerated(d.caseGenerated)
+    if (d.caregiverInput !== undefined) setCaregiverInput(d.caregiverInput)
+    if (d.caregiverGenerated !== undefined) setCaregiverGenerated(d.caregiverGenerated)
+    if (d.selectedProblems) setSelectedProblems(d.selectedProblems)
+    if (d.rankedProblems) setRankedProblems(d.rankedProblems)
+    if (d.problemExplanations !== undefined) setProblemExplanations(d.problemExplanations)
+    if (d.careGoals) setCareGoals(d.careGoals)
+    if (d.services) setServices(d.services)
+    if (d.transportation !== undefined) setTransportation(d.transportation)
+    if (d.transportHospital !== undefined) setTransportHospital(d.transportHospital)
+    if (d.transportEnabled !== undefined) setTransportEnabled(d.transportEnabled)
+    if (d.aidsDetail !== undefined) setAidsDetail(d.aidsDetail)
+    if (d.respiteEnabled !== undefined) setRespiteEnabled(d.respiteEnabled)
+    if (d.respiteStartYear !== undefined) setRespiteStartYear(d.respiteStartYear)
+    if (d.respiteStartMonth !== undefined) setRespiteStartMonth(d.respiteStartMonth)
+    if (d.respiteEndYear !== undefined) setRespiteEndYear(d.respiteEndYear)
+    if (d.respiteEndMonth !== undefined) setRespiteEndMonth(d.respiteEndMonth)
+    if (d.respiteAsOfMonth !== undefined) setRespiteAsOfMonth(d.respiteAsOfMonth)
+    if (d.respiteRemaining !== undefined) setRespiteRemaining(d.respiteRemaining)
+    if (d.respiteItems) setRespiteItems(d.respiteItems)
+    if (d.serviceEnabled !== undefined) setServiceEnabled(d.serviceEnabled)
+    if (d.referral !== undefined) setReferral(d.referral)
+    if (d.finalDoc !== undefined) setFinalDoc(d.finalDoc)
+  }
+
+  // Fetch drafts when case changes
+  useEffect(() => {
+    if (!selectedCaseId || !settings.appsScriptUrl) { setDrafts([]); return }
+    const c = cases.find(x => x.id === selectedCaseId)
+    if (!c) return
+    setDraftLoading(true)
+    fetch(`/api/draft?url=${encodeURIComponent(settings.appsScriptUrl)}&caseNumber=${encodeURIComponent(c.caseNumber || c.id)}`)
+      .then(r => r.json())
+      .then(data => { if (data.ok) setDrafts(data.drafts || []) })
+      .catch(() => {})
+      .finally(() => setDraftLoading(false))
+  }, [selectedCaseId, settings.appsScriptUrl])
+
+  const handleSaveDraft = async () => {
+    if (!selectedCase) return
+    setSavingDraft(true)
+    const ts = new Date().toISOString()
+    const label = draftLabel.trim() || `${date} 草稿`
+    try {
+      await fetch('/api/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          appsScriptUrl: settings.appsScriptUrl,
+          record: {
+            caseNumber: selectedCase.caseNumber || selectedCase.id,
+            caseNumberRef: selectedCase.id,
+            caseNameRef: selectedCase.name,
+            ts,
+            label,
+            data: JSON.stringify(getDraftData()),
+          },
+        }),
+      })
+      setDrafts(prev => [...prev, { caseNumber: selectedCase.caseNumber || selectedCase.id, ts, label, data: JSON.stringify(getDraftData()) }])
+    } catch {}
+    setSavingDraft(false)
+    setShowDraftSave(false)
+    setDraftLabel('')
+  }
+
+  const handleDeleteDraft = async (ts: string) => {
+    if (!selectedCase) return
+    const caseNumber = selectedCase.caseNumber || selectedCase.id
+    setDrafts(prev => prev.filter(d => d.ts !== ts))
+    try {
+      await fetch('/api/draft', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appsScriptUrl: settings.appsScriptUrl, caseNumber, ts }),
+      })
+    } catch {}
+  }
 
   // ── AI helper
   const callAI = async (prompt: string): Promise<string> => {
@@ -403,9 +557,14 @@ ${caregiverInput}
   const handleGenProblems = () => withError(async () => {
     setGenProblems(true)
     try {
-      const prompt = `你是一位專業長照個案管理師，請針對以下照顧問題清單，為每個問題撰寫一句具體的臨床說明（說明原因或影響），以繁體中文輸出。
+      const context = [
+        diseaseGenerated && `疾病史：${diseaseGenerated}`,
+        caseGenerated && `個案狀況：${caseGenerated}`,
+        caregiverGenerated && `照顧者評估：${caregiverGenerated}`,
+      ].filter(Boolean).join('\n')
+      const prompt = `你是一位專業長照個案管理師，請針對以下照顧問題清單，結合個案摘述，為每個問題撰寫一句具體的臨床說明（說明原因或影響），以繁體中文輸出。
 
-問題清單（按優先順序）：
+${context ? `【個案摘述】\n${context}\n\n` : ''}問題清單（按優先順序）：
 ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 
 請以「1. 問題名稱：說明文字」格式逐條輸出，不要其他說明。`
@@ -436,7 +595,7 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n')}
     } finally { setGenGoals(false) }
   })
 
-  // ── Final doc AI
+  // ── Final doc — direct assembly (no second AI pass)
   const handleGenFinal = () => withError(async () => {
     setGenFinal(true)
     setSaved(false)
@@ -445,7 +604,9 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n')}
       const year = d.getFullYear() - 1911
       const month = d.getMonth() + 1
       const day = d.getDate()
-      const serviceList = services.map(s => `${s.code}[${s.name}] ${s.units}單位/月`).join('；') || '（尚未填寫）'
+      const serviceList = serviceEnabled
+        ? services.map(s => `${s.code}[${s.name}] ${s.units}單位/月`).join('；') || '（尚未填寫）'
+        : '暫無需求'
       const transportDetail = transportEnabled
         ? `${transportation}，至${transportHospital || '醫療院所'}`
         : '暫無需求'
@@ -453,56 +614,33 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n')}
         ? `本案喘息額度自${respiteStartYear}年${respiteStartMonth}月至${respiteEndYear}年${respiteEndMonth}月，截至${respiteAsOfMonth}月尚餘${respiteRemaining}元。${respiteItems.map(i => `GA${i.code}[${i.name}]*${i.units}單位/年`).join('；')}`
         : '暫無需求'
 
-      const prompt = `你是一位專業長照個案管理師，請根據以下各節內容，以繁體中文產生完整家訪記錄，嚴格按照格式輸出，不要增減段落標題。
+      const problemSection = problemExplanations
+        ? problemExplanations
+        : rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'
 
----資料---
-家訪日期：民國${year}年${month}月${day}日
-訪視對象：${visitTarget || selectedCase?.guardian || '個案及家屬'}
-個管師：${settings.managerName} ${settings.managerPhone}
-
-疾病史：${diseaseGenerated || '（未產生）'}
-個案狀況：${caseGenerated || '（未產生）'}
-主要照顧者評估：${caregiverGenerated || caregiverInput || '（未填）'}
-
-照顧問題（按優先順序）：
-${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'}
-問題說明：${problemExplanations || '（未產生）'}
-
-短期目標：${careGoals.short || '（未填）'}
-中期目標：${careGoals.mid || '（未填）'}
-長期目標：${careGoals.long || '（未填）'}
-
-照顧及專業服務：${serviceList}
-交通接送服務：${transportDetail}
-輔具及居家無障礙環境改善服務：${aidsDetail}
-喘息服務/短照服務：${respiteText}
-轉介其他資源：${referral}
-
----格式---
-一、本案於民國${year}年${month}月${day}日家訪，與個案及家屬${visitTarget || selectedCase?.guardian || '家屬'}討論照顧計畫/個管${settings.managerName} ${settings.managerPhone}。
+      const doc = `一、本案於民國${year}年${month}月${day}日家訪，與${visitTarget || selectedCase?.guardian || '個案及家屬'}討論照顧計畫/個管${settings.managerName} ${settings.managerPhone}。
 二、個案摘述
-1.疾病史：（疾病史內容）
-2.個案狀況：（個案狀況內容，2-4句）
-3.主要照顧者評估：（照顧者評估內容，2-3句）
+1.疾病史：${diseaseGenerated || '（未產生）'}
+2.個案狀況：${caseGenerated || '（未產生）'}
+3.主要照顧者評估：${caregiverGenerated || caregiverInput || '（未填）'}
 三、照顧問題
-（條列各問題，格式：1. 問題名稱：說明）
+${problemSection}
 四、照顧計畫目標
-1.短期目標：（內容）
-2.中期目標：（內容）
-3.長期目標：（內容）
+1.短期目標：${careGoals.short || '（未填）'}
+2.中期目標：${careGoals.mid || '（未填）'}
+3.長期目標：${careGoals.long || '（未填）'}
 
-一、照顧及專業服務：（服務清單）
-二、交通接送服務：（內容）
-三、輔具及居家無障礙環境改善服務：（內容）
-四、喘息服務/短照服務：（內容）
-五、轉介其他資源：（內容）
+一、照顧及專業服務：${serviceList}
+二、交通接送服務：${transportDetail}
+三、輔具及居家無障礙環境改善服務：${aidsDetail}
+四、喘息服務/短照服務：${respiteText}
+五、轉介其他資源：${referral}`
 
-請直接依格式輸出，不要前置說明。`
-      setFinalDoc(await callAI(prompt))
+      setFinalDoc(doc)
     } finally { setGenFinal(false) }
   })
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedCase || !finalDoc) return
     addHomeVisit({
       id: Date.now().toString(),
@@ -512,7 +650,58 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'}
       planContent: finalDoc,
       createdAt: new Date().toISOString(),
     })
+    if (careGoals.short || careGoals.mid || careGoals.long) {
+      updateCase(selectedCase.id, {
+        shortGoal: careGoals.short,
+        midGoal: careGoals.mid,
+        longGoal: careGoals.long,
+      })
+    }
     setSaved(true)
+    if (settings.appsScriptUrl) {
+      try {
+        await fetch('/api/save-visit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            appsScriptUrl: settings.appsScriptUrl,
+            sheetName: settings.homeVisitSheetName || '家訪紀錄',
+            record: {
+              caseId: selectedCase.caseNumber || selectedCase.id,
+              date,
+              caseNumber: selectedCase.caseNumber || '',
+              caseName: selectedCase.name,
+              method: '家訪',
+              target: '',
+              content: finalDoc,
+            },
+          }),
+        })
+      } catch {}
+    }
+  }
+
+  const handleSyncGoals = async () => {
+    if (!selectedCase) return
+    setGoalSyncing(true)
+    const fields = { shortGoal: careGoals.short, midGoal: careGoals.mid, longGoal: careGoals.long }
+    updateCase(selectedCase.id, fields)
+    try {
+      await fetch('/api/update-case', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          appsScriptUrl: settings.appsScriptUrl,
+          action: 'updateCase',
+          caseName: selectedCase.name,
+          caseNumber: selectedCase.caseNumber,
+          fields,
+        }),
+      })
+    } catch {}
+    setGoalSyncing(false)
+    setGoalSynced(true)
+    setTimeout(() => setGoalSynced(false), 3000)
   }
 
   // ── Service helpers
@@ -558,7 +747,7 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'}
     caregiverGenerated !== '' || caregiverInput !== '',
     rankedProblems.length > 0,
     careGoals.short !== '' || careGoals.mid !== '' || careGoals.long !== '',
-    services.length > 0,
+    serviceEnabled,
     finalDoc !== '',
   ]
 
@@ -654,6 +843,73 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'}
               {recentVisits.length > 0 && (
                 <p className="text-xs text-[#2d6a4f]/50 mt-1.5">上次家訪：{recentVisits[0].date}</p>
               )}
+            </div>
+          )}
+
+          {/* Draft panel */}
+          {selectedCase && (
+            <div className="bg-white rounded-xl border border-gray-100 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-gray-700">草稿</p>
+                <button
+                  onClick={() => setShowDraftSave(v => !v)}
+                  className="text-xs px-2.5 py-1 bg-[#d8f3dc] text-[#2d6a4f] rounded-lg hover:bg-[#b7e4c7] transition-colors"
+                >
+                  存草稿
+                </button>
+              </div>
+
+              {showDraftSave && (
+                <div className="mb-3 space-y-2">
+                  <input
+                    type="text"
+                    value={draftLabel}
+                    onChange={e => setDraftLabel(e.target.value)}
+                    placeholder={`${date} 草稿`}
+                    className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSaveDraft}
+                      disabled={savingDraft}
+                      className="flex-1 py-1.5 text-xs bg-[#2d6a4f] text-white rounded-lg hover:bg-[#1b4332] disabled:opacity-50"
+                    >
+                      {savingDraft ? '儲存中...' : '確認儲存'}
+                    </button>
+                    <button
+                      onClick={() => { setShowDraftSave(false); setDraftLabel('') }}
+                      className="px-3 py-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {draftLoading && <p className="text-xs text-gray-400">載入草稿中...</p>}
+              {!draftLoading && drafts.length === 0 && (
+                <p className="text-xs text-gray-400">尚無草稿</p>
+              )}
+              {drafts.map(d => (
+                <div key={d.ts} className="flex items-center gap-2 py-1.5 border-t border-gray-50 first:border-0">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-gray-700 truncate">{d.label}</p>
+                    <p className="text-xs text-gray-400">{new Date(d.ts).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
+                  <button
+                    onClick={() => { try { loadDraftData(JSON.parse(d.data)) } catch {} }}
+                    className="text-xs px-2 py-1 text-[#2d6a4f] border border-[#52b788] rounded-lg hover:bg-[#d8f3dc] transition-colors flex-shrink-0"
+                  >
+                    載入
+                  </button>
+                  <button
+                    onClick={() => handleDeleteDraft(d.ts)}
+                    className="text-xs px-2 py-1 text-red-400 border border-red-100 rounded-lg hover:bg-red-50 transition-colors flex-shrink-0"
+                  >
+                    刪
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -1194,6 +1450,17 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'}
                 {/* Services */}
                 <div className="mb-4">
                   <SectionLabel>照顧及專業服務</SectionLabel>
+                  <div className="flex items-center gap-2 mb-2">
+                    <input
+                      type="checkbox"
+                      checked={serviceEnabled}
+                      onChange={e => setServiceEnabled(e.target.checked)}
+                      className="accent-[#2d6a4f] w-4 h-4"
+                      id="serviceCheck"
+                    />
+                    <label htmlFor="serviceCheck" className="text-sm text-gray-700 cursor-pointer">需要照顧及專業服務</label>
+                  </div>
+                  {serviceEnabled && <>
                   <div className="space-y-2 mb-3">
                     {services.map(s => (
                       <div key={s.id} className="flex items-center gap-2 p-2 border border-gray-100 rounded-lg bg-gray-50">
@@ -1281,6 +1548,7 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'}
                       </div>
                     )}
                   </div>
+                  </>}
                 </div>
 
                 {/* Transport */}
@@ -1434,7 +1702,7 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'}
                 </div>
 
                 <div className="flex justify-end mb-4">
-                  <GenButton onClick={handleGenFinal} loading={genFinal} label="✨ AI 產生完整家訪記錄" />
+                  <GenButton onClick={handleGenFinal} loading={genFinal} label="📄 產生完整家訪記錄" />
                 </div>
 
                 {finalDoc && (
@@ -1467,7 +1735,48 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'}
                         </button>
                       </div>
                     </div>
-                    <pre className="p-4 text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed bg-white">{finalDoc}</pre>
+                    <textarea
+                      value={finalDoc}
+                      onChange={e => { setFinalDoc(e.target.value); setSaved(false) }}
+                      rows={30}
+                      className="w-full p-4 text-sm text-gray-700 font-sans leading-relaxed bg-white resize-y focus:outline-none"
+                    />
+                    {selectedCase && (careGoals.short || careGoals.mid || careGoals.long) && (
+                      <div className="border-t border-[#52b788]/30 px-4 py-3 bg-[#f0faf4]">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-semibold text-[#2d6a4f]">更新照顧目標至個案資料</p>
+                          <button
+                            onClick={handleSyncGoals}
+                            disabled={goalSyncing}
+                            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                              goalSynced ? 'bg-green-100 text-green-700' : 'bg-[#2d6a4f] text-white hover:bg-[#1b4332] disabled:opacity-50'
+                            }`}
+                          >
+                            {goalSynced ? '✓ 已更新' : goalSyncing ? '更新中...' : '同步目標'}
+                          </button>
+                        </div>
+                        <div className="space-y-1.5">
+                          {careGoals.short && (
+                            <div>
+                              <label className="text-xs text-gray-400">短期目標</label>
+                              <input value={careGoals.short} onChange={e => setCareGoals(p => ({ ...p, short: e.target.value }))} className="w-full mt-0.5 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]" />
+                            </div>
+                          )}
+                          {careGoals.mid && (
+                            <div>
+                              <label className="text-xs text-gray-400">中期目標</label>
+                              <input value={careGoals.mid} onChange={e => setCareGoals(p => ({ ...p, mid: e.target.value }))} className="w-full mt-0.5 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]" />
+                            </div>
+                          )}
+                          {careGoals.long && (
+                            <div>
+                              <label className="text-xs text-gray-400">長期目標</label>
+                              <input value={careGoals.long} onChange={e => setCareGoals(p => ({ ...p, long: e.target.value }))} className="w-full mt-0.5 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
