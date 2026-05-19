@@ -650,6 +650,13 @@ ${problemSection}
       planContent: finalDoc,
       createdAt: new Date().toISOString(),
     })
+    if (careGoals.short || careGoals.mid || careGoals.long) {
+      updateCase(selectedCase.id, {
+        shortGoal: careGoals.short,
+        midGoal: careGoals.mid,
+        longGoal: careGoals.long,
+      })
+    }
     setSaved(true)
     if (settings.appsScriptUrl) {
       try {
