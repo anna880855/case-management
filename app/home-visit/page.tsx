@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useMemo, Suspense } from 'react'
+import React, { useState, useMemo, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useStore } from '@/lib/store'
 import {
@@ -175,7 +175,7 @@ const TABS = ['疾病史', '個案摘述', '照顧者評估', '問題清單', '�
 
 function HomeVisitContent() {
   const searchParams = useSearchParams()
-  const { cases, settings, addHomeVisit, getHomeVisitsByCase } = useStore()
+  const { cases, settings, addHomeVisit, getHomeVisitsByCase, updateCase } = useStore()
 
   const todayStr = new Date().toISOString().split('T')[0]
   const activeCases = cases.filter(c => c.status !== 'closed')
@@ -254,6 +254,8 @@ function HomeVisitContent() {
 
   // ── Care goals
   const [careGoals, setCareGoals] = useState({ short: '', mid: '', long: '' })
+  const [goalSyncing, setGoalSyncing] = useState(false)
+  const [goalSynced, setGoalSynced] = useState(false)
 
   // ── Care Plan
   const [services, setServices] = useState<{ id: string; category: string; code: string; name: string; units: string }[]>([])
@@ -287,6 +289,13 @@ function HomeVisitContent() {
   const [genGoals, setGenGoals] = useState(false)
   const [genFinal, setGenFinal] = useState(false)
 
+  // ── Drafts
+  const [drafts, setDrafts] = useState<{ caseNumber: string; ts: string; label: string; data: string }[]>([])
+  const [draftLoading, setDraftLoading] = useState(false)
+  const [savingDraft, setSavingDraft] = useState(false)
+  const [showDraftSave, setShowDraftSave] = useState(false)
+  const [draftLabel, setDraftLabel] = useState('')
+
   // ── Derived
   const selectedCase = cases.find(c => c.id === selectedCaseId)
   const recentVisits = selectedCaseId ? getHomeVisitsByCase(selectedCaseId).slice(0, 2) : []
@@ -301,6 +310,150 @@ function HomeVisitContent() {
 
   const toggle = (arr: string[], val: string) =>
     arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val]
+
+  // ── Draft helpers
+  const getDraftData = () => ({
+    visitTarget, date,
+    diseaseChecked, diseaseSubs, diseaseTexts, returnVisit, hospital,
+    medicationStatus, medicationNotes, diseaseGenerated,
+    memory, cognition, emotion, consciousness, comprehension, expression, vision, hearing,
+    physiological, ampLocation, toiletingStatus, bowel, incontinence, bathing,
+    sleep, sleepInsomniaMed, sleepInsomniaReason, aids, tubes, residentialCare, dialysisLocation,
+    mealPrep, eatingMethod, teethStatus, utensilMethod, tubeFeedingCans, choking, dietTexture, calories, nutritionExtra,
+    grossMotor, riseAbility, fallFrequency, fallCount,
+    caseOther, caseGenerated, caregiverInput, caregiverGenerated,
+    selectedProblems, rankedProblems, problemExplanations,
+    careGoals, services,
+    transportation, transportHospital, transportEnabled, aidsDetail,
+    respiteEnabled, respiteStartYear, respiteStartMonth, respiteEndYear, respiteEndMonth,
+    respiteAsOfMonth, respiteRemaining, respiteItems,
+    referral, finalDoc,
+  })
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const loadDraftData = (d: Record<string, any>) => {
+    if (d.visitTarget !== undefined) setVisitTarget(d.visitTarget)
+    if (d.date) setDate(d.date)
+    if (d.diseaseChecked) setDiseaseChecked(d.diseaseChecked)
+    if (d.diseaseSubs) setDiseaseSubs(d.diseaseSubs)
+    if (d.diseaseTexts) setDiseaseTexts(d.diseaseTexts)
+    if (d.returnVisit) setReturnVisit(d.returnVisit)
+    if (d.hospital !== undefined) setHospital(d.hospital)
+    if (d.medicationStatus) setMedicationStatus(d.medicationStatus)
+    if (d.medicationNotes) setMedicationNotes(d.medicationNotes)
+    if (d.diseaseGenerated !== undefined) setDiseaseGenerated(d.diseaseGenerated)
+    if (d.memory !== undefined) setMemory(d.memory)
+    if (d.cognition) setCognition(d.cognition)
+    if (d.emotion) setEmotion(d.emotion)
+    if (d.consciousness !== undefined) setConsciousness(d.consciousness)
+    if (d.comprehension !== undefined) setComprehension(d.comprehension)
+    if (d.expression) setExpression(d.expression)
+    if (d.vision) setVision(d.vision)
+    if (d.hearing) setHearing(d.hearing)
+    if (d.physiological) setPhysiological(d.physiological)
+    if (d.ampLocation !== undefined) setAmpLocation(d.ampLocation)
+    if (d.toiletingStatus) setToiletingStatus(d.toiletingStatus)
+    if (d.bowel) setBowel(d.bowel)
+    if (d.incontinence) setIncontinence(d.incontinence)
+    if (d.bathing !== undefined) setBathing(d.bathing)
+    if (d.sleep) setSleep(d.sleep)
+    if (d.sleepInsomniaMed) setSleepInsomniaMed(d.sleepInsomniaMed)
+    if (d.sleepInsomniaReason) setSleepInsomniaReason(d.sleepInsomniaReason)
+    if (d.aids) setAids(d.aids)
+    if (d.tubes) setTubes(d.tubes)
+    if (d.residentialCare !== undefined) setResidentialCare(d.residentialCare)
+    if (d.dialysisLocation !== undefined) setDialysisLocation(d.dialysisLocation)
+    if (d.mealPrep) setMealPrep(d.mealPrep)
+    if (d.eatingMethod) setEatingMethod(d.eatingMethod)
+    if (d.teethStatus) setTeethStatus(d.teethStatus)
+    if (d.utensilMethod) setUtensilMethod(d.utensilMethod)
+    if (d.tubeFeedingCans !== undefined) setTubeFeedingCans(d.tubeFeedingCans)
+    if (d.choking) setChoking(d.choking)
+    if (d.dietTexture) setDietTexture(d.dietTexture)
+    if (d.calories) setCalories(d.calories)
+    if (d.nutritionExtra !== undefined) setNutritionExtra(d.nutritionExtra)
+    if (d.grossMotor !== undefined) setGrossMotor(d.grossMotor)
+    if (d.riseAbility !== undefined) setRiseAbility(d.riseAbility)
+    if (d.fallFrequency !== undefined) setFallFrequency(d.fallFrequency)
+    if (d.fallCount !== undefined) setFallCount(d.fallCount)
+    if (d.caseOther !== undefined) setCaseOther(d.caseOther)
+    if (d.caseGenerated !== undefined) setCaseGenerated(d.caseGenerated)
+    if (d.caregiverInput !== undefined) setCaregiverInput(d.caregiverInput)
+    if (d.caregiverGenerated !== undefined) setCaregiverGenerated(d.caregiverGenerated)
+    if (d.selectedProblems) setSelectedProblems(d.selectedProblems)
+    if (d.rankedProblems) setRankedProblems(d.rankedProblems)
+    if (d.problemExplanations !== undefined) setProblemExplanations(d.problemExplanations)
+    if (d.careGoals) setCareGoals(d.careGoals)
+    if (d.services) setServices(d.services)
+    if (d.transportation !== undefined) setTransportation(d.transportation)
+    if (d.transportHospital !== undefined) setTransportHospital(d.transportHospital)
+    if (d.transportEnabled !== undefined) setTransportEnabled(d.transportEnabled)
+    if (d.aidsDetail !== undefined) setAidsDetail(d.aidsDetail)
+    if (d.respiteEnabled !== undefined) setRespiteEnabled(d.respiteEnabled)
+    if (d.respiteStartYear !== undefined) setRespiteStartYear(d.respiteStartYear)
+    if (d.respiteStartMonth !== undefined) setRespiteStartMonth(d.respiteStartMonth)
+    if (d.respiteEndYear !== undefined) setRespiteEndYear(d.respiteEndYear)
+    if (d.respiteEndMonth !== undefined) setRespiteEndMonth(d.respiteEndMonth)
+    if (d.respiteAsOfMonth !== undefined) setRespiteAsOfMonth(d.respiteAsOfMonth)
+    if (d.respiteRemaining !== undefined) setRespiteRemaining(d.respiteRemaining)
+    if (d.respiteItems) setRespiteItems(d.respiteItems)
+    if (d.referral !== undefined) setReferral(d.referral)
+    if (d.finalDoc !== undefined) setFinalDoc(d.finalDoc)
+  }
+
+  // Fetch drafts when case changes
+  useEffect(() => {
+    if (!selectedCaseId || !settings.appsScriptUrl) { setDrafts([]); return }
+    const c = cases.find(x => x.id === selectedCaseId)
+    if (!c) return
+    setDraftLoading(true)
+    fetch(`/api/draft?url=${encodeURIComponent(settings.appsScriptUrl)}&caseNumber=${encodeURIComponent(c.caseNumber || c.id)}`)
+      .then(r => r.json())
+      .then(data => { if (data.ok) setDrafts(data.drafts || []) })
+      .catch(() => {})
+      .finally(() => setDraftLoading(false))
+  }, [selectedCaseId, settings.appsScriptUrl])
+
+  const handleSaveDraft = async () => {
+    if (!selectedCase) return
+    setSavingDraft(true)
+    const ts = new Date().toISOString()
+    const label = draftLabel.trim() || `${date} 草稿`
+    try {
+      await fetch('/api/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          appsScriptUrl: settings.appsScriptUrl,
+          record: {
+            caseNumber: selectedCase.caseNumber || selectedCase.id,
+            caseNumberRef: selectedCase.id,
+            caseNameRef: selectedCase.name,
+            ts,
+            label,
+            data: JSON.stringify(getDraftData()),
+          },
+        }),
+      })
+      setDrafts(prev => [...prev, { caseNumber: selectedCase.caseNumber || selectedCase.id, ts, label, data: JSON.stringify(getDraftData()) }])
+    } catch {}
+    setSavingDraft(false)
+    setShowDraftSave(false)
+    setDraftLabel('')
+  }
+
+  const handleDeleteDraft = async (ts: string) => {
+    if (!selectedCase) return
+    const caseNumber = selectedCase.caseNumber || selectedCase.id
+    setDrafts(prev => prev.filter(d => d.ts !== ts))
+    try {
+      await fetch('/api/draft', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appsScriptUrl: settings.appsScriptUrl, caseNumber, ts }),
+      })
+    } catch {}
+  }
 
   // ── AI helper
   const callAI = async (prompt: string): Promise<string> => {
@@ -502,7 +655,7 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'}
     } finally { setGenFinal(false) }
   })
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedCase || !finalDoc) return
     addHomeVisit({
       id: Date.now().toString(),
@@ -513,6 +666,50 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'}
       createdAt: new Date().toISOString(),
     })
     setSaved(true)
+    if (settings.appsScriptUrl) {
+      try {
+        await fetch('/api/save-visit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            appsScriptUrl: settings.appsScriptUrl,
+            sheetName: settings.homeVisitSheetName || '家訪紀錄',
+            record: {
+              caseId: selectedCase.caseNumber || selectedCase.id,
+              date,
+              caseNumber: selectedCase.caseNumber || '',
+              caseName: selectedCase.name,
+              method: '家訪',
+              target: '',
+              content: finalDoc,
+            },
+          }),
+        })
+      } catch {}
+    }
+  }
+
+  const handleSyncGoals = async () => {
+    if (!selectedCase) return
+    setGoalSyncing(true)
+    const fields = { shortGoal: careGoals.short, midGoal: careGoals.mid, longGoal: careGoals.long }
+    updateCase(selectedCase.id, fields)
+    try {
+      await fetch('/api/update-case', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          appsScriptUrl: settings.appsScriptUrl,
+          action: 'updateCase',
+          caseName: selectedCase.name,
+          caseNumber: selectedCase.caseNumber,
+          fields,
+        }),
+      })
+    } catch {}
+    setGoalSyncing(false)
+    setGoalSynced(true)
+    setTimeout(() => setGoalSynced(false), 3000)
   }
 
   // ── Service helpers
@@ -654,6 +851,73 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'}
               {recentVisits.length > 0 && (
                 <p className="text-xs text-[#2d6a4f]/50 mt-1.5">上次家訪：{recentVisits[0].date}</p>
               )}
+            </div>
+          )}
+
+          {/* Draft panel */}
+          {selectedCase && (
+            <div className="bg-white rounded-xl border border-gray-100 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-gray-700">草稿</p>
+                <button
+                  onClick={() => setShowDraftSave(v => !v)}
+                  className="text-xs px-2.5 py-1 bg-[#d8f3dc] text-[#2d6a4f] rounded-lg hover:bg-[#b7e4c7] transition-colors"
+                >
+                  存草稿
+                </button>
+              </div>
+
+              {showDraftSave && (
+                <div className="mb-3 space-y-2">
+                  <input
+                    type="text"
+                    value={draftLabel}
+                    onChange={e => setDraftLabel(e.target.value)}
+                    placeholder={`${date} 草稿`}
+                    className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSaveDraft}
+                      disabled={savingDraft}
+                      className="flex-1 py-1.5 text-xs bg-[#2d6a4f] text-white rounded-lg hover:bg-[#1b4332] disabled:opacity-50"
+                    >
+                      {savingDraft ? '儲存中...' : '確認儲存'}
+                    </button>
+                    <button
+                      onClick={() => { setShowDraftSave(false); setDraftLabel('') }}
+                      className="px-3 py-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {draftLoading && <p className="text-xs text-gray-400">載入草稿中...</p>}
+              {!draftLoading && drafts.length === 0 && (
+                <p className="text-xs text-gray-400">尚無草稿</p>
+              )}
+              {drafts.map(d => (
+                <div key={d.ts} className="flex items-center gap-2 py-1.5 border-t border-gray-50 first:border-0">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-gray-700 truncate">{d.label}</p>
+                    <p className="text-xs text-gray-400">{new Date(d.ts).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
+                  <button
+                    onClick={() => { try { loadDraftData(JSON.parse(d.data)) } catch {} }}
+                    className="text-xs px-2 py-1 text-[#2d6a4f] border border-[#52b788] rounded-lg hover:bg-[#d8f3dc] transition-colors flex-shrink-0"
+                  >
+                    載入
+                  </button>
+                  <button
+                    onClick={() => handleDeleteDraft(d.ts)}
+                    className="text-xs px-2 py-1 text-red-400 border border-red-100 rounded-lg hover:bg-red-50 transition-colors flex-shrink-0"
+                  >
+                    刪
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -1467,7 +1731,48 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n') || '（未選）'}
                         </button>
                       </div>
                     </div>
-                    <pre className="p-4 text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed bg-white">{finalDoc}</pre>
+                    <textarea
+                      value={finalDoc}
+                      onChange={e => { setFinalDoc(e.target.value); setSaved(false) }}
+                      rows={30}
+                      className="w-full p-4 text-sm text-gray-700 font-sans leading-relaxed bg-white resize-y focus:outline-none"
+                    />
+                    {selectedCase && (careGoals.short || careGoals.mid || careGoals.long) && (
+                      <div className="border-t border-[#52b788]/30 px-4 py-3 bg-[#f0faf4]">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-semibold text-[#2d6a4f]">更新照顧目標至個案資料</p>
+                          <button
+                            onClick={handleSyncGoals}
+                            disabled={goalSyncing}
+                            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                              goalSynced ? 'bg-green-100 text-green-700' : 'bg-[#2d6a4f] text-white hover:bg-[#1b4332] disabled:opacity-50'
+                            }`}
+                          >
+                            {goalSynced ? '✓ 已更新' : goalSyncing ? '更新中...' : '同步目標'}
+                          </button>
+                        </div>
+                        <div className="space-y-1.5">
+                          {careGoals.short && (
+                            <div>
+                              <label className="text-xs text-gray-400">短期目標</label>
+                              <input value={careGoals.short} onChange={e => setCareGoals(p => ({ ...p, short: e.target.value }))} className="w-full mt-0.5 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]" />
+                            </div>
+                          )}
+                          {careGoals.mid && (
+                            <div>
+                              <label className="text-xs text-gray-400">中期目標</label>
+                              <input value={careGoals.mid} onChange={e => setCareGoals(p => ({ ...p, mid: e.target.value }))} className="w-full mt-0.5 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]" />
+                            </div>
+                          )}
+                          {careGoals.long && (
+                            <div>
+                              <label className="text-xs text-gray-400">長期目標</label>
+                              <input value={careGoals.long} onChange={e => setCareGoals(p => ({ ...p, long: e.target.value }))} className="w-full mt-0.5 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -64,16 +64,21 @@ export default function HomePage() {
 
   const activeCases = useMemo(() => cases.filter(c => c.status === 'active'), [cases])
 
-  const noPhoneThisMonth = useMemo(() => activeCases.filter(c => {
-    return !phoneVisits.some(v => {
+  const noVisitThisMonth = useMemo(() => activeCases.filter(c => {
+    const hasPhone = phoneVisits.some(v => {
       if (v.caseId !== c.id) return false
       const d = new Date(v.date)
       return d.getFullYear() === thisYear && d.getMonth() === thisMonth
     })
-  }), [activeCases, phoneVisits, thisYear, thisMonth])
+    const hasHome = homeVisits.some(v => {
+      if (v.caseId !== c.id) return false
+      const d = new Date(v.date)
+      return d.getFullYear() === thisYear && d.getMonth() === thisMonth
+    })
+    return !hasPhone && !hasHome
+  }), [activeCases, phoneVisits, homeVisits, thisYear, thisMonth])
 
   const noHomeInSixMonths = useMemo(() => activeCases.filter(c => {
-    // 優先用 Google Sheet 的最近家訪日
     if (c.lastHomeVisitDate) {
       const d = new Date(c.lastHomeVisitDate)
       if (!isNaN(d.getTime())) return d < sixMonthsAgo
@@ -92,7 +97,7 @@ export default function HomePage() {
 
   const filtered = useMemo(() => {
     let pool = cases
-    if (visitFilter === 'no-phone') pool = noPhoneThisMonth
+    if (visitFilter === 'no-phone') pool = noVisitThisMonth
     else if (visitFilter === 'no-home') pool = noHomeInSixMonths
     else pool = cases.filter(c => statusFilter === 'all' || c.status === statusFilter)
 
@@ -104,7 +109,7 @@ export default function HomePage() {
       (c.phone || '').includes(q) ||
       (c.address || '').toLowerCase().includes(q)
     )
-  }, [cases, search, statusFilter, visitFilter, noPhoneThisMonth, noHomeInSixMonths])
+  }, [cases, search, statusFilter, visitFilter, noVisitThisMonth, noHomeInSixMonths])
 
   if (!mounted) return <div className="text-center py-20 text-gray-400 text-sm">載入中...</div>
 
@@ -131,11 +136,11 @@ export default function HomePage() {
             }`}
           >
             <div className="text-left">
-              <p className="text-xs text-gray-500">本月未電訪</p>
-              <p className="text-2xl font-bold text-red-500">{noPhoneThisMonth.length}</p>
+              <p className="text-xs text-gray-500">本月未訪視</p>
+              <p className="text-2xl font-bold text-red-500">{noVisitThisMonth.length}</p>
               <p className="text-xs text-gray-400">位在案個案</p>
             </div>
-            <span className="text-2xl">📞</span>
+            <span className="text-2xl">📋</span>
           </button>
           <button
             onClick={() => setVisitFilter(v => v === 'no-home' ? 'all' : 'no-home')}
@@ -194,7 +199,7 @@ export default function HomePage() {
         <div className={`mb-3 px-4 py-2 rounded-lg text-sm font-medium ${
           visitFilter === 'no-phone' ? 'bg-red-50 text-red-700' : 'bg-orange-50 text-orange-700'
         }`}>
-          {visitFilter === 'no-phone' ? `📞 本月（${thisMonth + 1}月）尚未電訪的在案個案` : '🏠 近6個月尚未家訪的在案個案'}
+          {visitFilter === 'no-phone' ? `📋 本月（${thisMonth + 1}月）尚未訪視的在案個案` : '🏠 近6個月尚未家訪的在案個案'}
           {' '}共 {filtered.length} 位
         </div>
       )}
@@ -235,8 +240,8 @@ function CaseRow({ case_: c, visitFilter }: { case_: Case; visitFilter: VisitFil
           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLOR[c.status] || STATUS_COLOR.active}`}>
             {STATUS_LABEL[c.status] || '在案'}
           </span>
-          {c.status === 'active' && !hasPhoneThisMonth && (
-            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">未電訪</span>
+          {c.status === 'active' && !hasPhoneThisMonth && !hasHomeInSixMonths && (
+            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">未訪視</span>
           )}
           {c.status === 'active' && !hasHomeInSixMonths && (
             <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-600">未家訪</span>
