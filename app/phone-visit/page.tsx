@@ -174,7 +174,7 @@ function PhoneVisitContent() {
       const statusText = t.status === '完成＿%' ? `完成${t.percent || '?'}%` : t.status
       return `${goalLabels[g.key]}：${g.text}\n　→ ${statusText || '（未填）'}`
     })
-    return `\n【目標追蹤進度】\n${lines.join('\n')}`
+    return `六、復能目標追蹤進度：\n${lines.join('\n')}`
   }
 
   const handleQuickCombine = () => {
@@ -191,12 +191,11 @@ function PhoneVisitContent() {
 二、電訪對象：${visitTarget}
 三、訪談內容：
 ${content}${customNote ? `　${customNote}` : ''}
-${goalBlock}
 一、照顧及專業服務：服務穩定無須異動。
 二、交通接送服務：暫無新增照會。
 三、輔具及居家無障礙環境改善：無新增需求。
 四、喘息服務：與案家屬確認暫無需求。
-五、轉介其他資源：無轉介。`
+五、轉介其他資源：無轉介。${goalBlock ? `\n${goalBlock}` : ''}`
     setGenerated(result)
     setSaved(false)
     setError('')
@@ -215,13 +214,14 @@ ${goalBlock}
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: buildPrompt(selectedCase, pickedSentences, customNote + buildGoalBlock(), target, `${date} ${time}`, settings.managerName),
+          prompt: buildPrompt(selectedCase, pickedSentences, customNote, target, `${date} ${time}`, settings.managerName),
           apiKey: settings.claudeApiKey,
         }),
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      setGenerated(data.content)
+      const goalBlock = buildGoalBlock()
+      setGenerated(data.content + (goalBlock ? `\n${goalBlock}` : ''))
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : '產生失敗，請再試一次')
     } finally {
