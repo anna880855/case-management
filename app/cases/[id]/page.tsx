@@ -33,7 +33,7 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
       <div className="text-center py-24 text-gray-400">
         <p className="text-4xl mb-3">🔍</p>
         <p className="mb-4">找不到此個案</p>
-        <Link href="/" className="text-[#2d6a4f] hover:underline">← 返回列表</Link>
+        <Link href="/" className="text-[#7a9985] hover:underline">← 返回列表</Link>
       </div>
     )
   }
@@ -145,7 +145,7 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
         <span className={`px-2.5 py-0.5 rounded-full text-sm font-medium ${currentStatus.color}`}>
           {currentStatus.label}
         </span>
-        {syncMsg && <span className="text-xs text-[#2d6a4f] ml-1">{syncMsg}</span>}
+        {syncMsg && <span className="text-xs text-[#7a9985] ml-1">{syncMsg}</span>}
       </div>
 
       {/* Status change */}
@@ -170,7 +170,7 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
 
       {/* Edit form */}
       {editing ? (
-        <div className="bg-white rounded-xl border border-[#52b788]/40 p-5 mb-4">
+        <div className="bg-white rounded-xl border border-[#a3bcaa]/40 p-5 mb-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-700">編輯個案資料</h3>
             <div className="flex gap-2">
@@ -183,7 +183,7 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
               <button
                 onClick={handleEditSave}
                 disabled={saving}
-                className="px-4 py-1.5 text-sm bg-[#2d6a4f] text-white rounded-lg hover:bg-[#1b4332] disabled:opacity-50"
+                className="px-4 py-1.5 text-sm bg-[#7a9985] text-white rounded-lg hover:bg-[#50665b] disabled:opacity-50"
               >
                 {saving ? '儲存中...' : '儲存並同步'}
               </button>
@@ -223,7 +223,7 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
                 value={ef.notes || ''}
                 onChange={e => setEditFields(p => ({ ...p, notes: e.target.value }))}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
               />
             </div>
             <div>
@@ -232,7 +232,7 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
                 value={ef.notes2 || ''}
                 onChange={e => setEditFields(p => ({ ...p, notes2: e.target.value }))}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
               />
             </div>
           </div>
@@ -270,7 +270,7 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
                   <dt className="text-xs text-gray-400 mb-1.5">服務項目</dt>
                   <div className="flex flex-wrap gap-1">
                     {c.services.map((s, i) => (
-                      <span key={i} className="px-2 py-0.5 bg-[#d8f3dc] text-[#2d6a4f] rounded-full text-xs font-medium">{s}</span>
+                      <span key={i} className="px-2 py-0.5 bg-[#e6ede7] text-[#7a9985] rounded-full text-xs font-medium">{s}</span>
                     ))}
                   </div>
                 </div>
@@ -300,7 +300,7 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
         <div className="mb-5">
           <button
             onClick={startEditing}
-            className="px-4 py-2 text-sm text-[#2d6a4f] border border-[#52b788] rounded-lg hover:bg-[#d8f3dc] transition-colors"
+            className="px-4 py-2 text-sm text-[#7a9985] border border-[#a3bcaa] rounded-lg hover:bg-[#e6ede7] transition-colors"
           >
             ✏️ 編輯個案資料
           </button>
@@ -310,13 +310,13 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
       <div className="flex gap-3 mb-6">
         <Link
           href={`/phone-visit?caseId=${c.id}`}
-          className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#2d6a4f] text-white rounded-xl hover:bg-[#1b4332] transition-colors font-medium"
+          className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#7a9985] text-white rounded-xl hover:bg-[#50665b] transition-colors font-medium"
         >
           📞 產生電訪紀錄
         </Link>
         <Link
           href={`/home-visit?caseId=${c.id}`}
-          className="flex-1 flex items-center justify-center gap-2 py-3 bg-white border-2 border-[#2d6a4f] text-[#2d6a4f] rounded-xl hover:bg-[#d8f3dc] transition-colors font-medium"
+          className="flex-1 flex items-center justify-center gap-2 py-3 bg-white border-2 border-[#7a9985] text-[#7a9985] rounded-xl hover:bg-[#e6ede7] transition-colors font-medium"
         >
           🏠 產生家訪計劃
         </Link>
@@ -375,7 +375,7 @@ function EditField({ label, value, onChange }: { label: string; value: string; o
         type="text"
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
       />
     </div>
   )

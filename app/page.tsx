@@ -11,8 +11,8 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  active: 'bg-green-100 text-green-700',
-  suspended: 'bg-yellow-100 text-yellow-700',
+  active: 'bg-[#dce8de] text-[#607a68]',
+  suspended: 'bg-[#ede9d8] text-[#7a7048]',
   closed: 'bg-gray-100 text-gray-500',
 }
 
@@ -113,8 +113,8 @@ export default function HomePage() {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold text-gray-800">個案列表</h2>
         <div className="flex gap-2 text-sm">
-          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full font-medium">在案 {counts.active}</span>
-          <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full font-medium">暫停 {counts.suspended}</span>
+          <span className="px-3 py-1 bg-[#dce8de] text-[#607a68] rounded-full font-medium">在案 {counts.active}</span>
+          <span className="px-3 py-1 bg-[#ede9d8] text-[#7a7048] rounded-full font-medium">暫停 {counts.suspended}</span>
           <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full font-medium">結案 {counts.closed}</span>
         </div>
       </div>
@@ -132,7 +132,7 @@ export default function HomePage() {
           >
             <div className="text-left">
               <p className="text-xs text-gray-500">本月未電訪</p>
-              <p className="text-2xl font-bold text-red-500">{noPhoneThisMonth.length}</p>
+              <p className="text-2xl font-bold text-[#b87c7c]">{noPhoneThisMonth.length}</p>
               <p className="text-xs text-gray-400">位在案個案</p>
             </div>
             <span className="text-2xl">📞</span>
@@ -147,7 +147,7 @@ export default function HomePage() {
           >
             <div className="text-left">
               <p className="text-xs text-gray-500">6個月未家訪</p>
-              <p className="text-2xl font-bold text-orange-500">{noHomeInSixMonths.length}</p>
+              <p className="text-2xl font-bold text-[#b8956a]">{noHomeInSixMonths.length}</p>
               <p className="text-xs text-gray-400">位在案個案</p>
             </div>
             <span className="text-2xl">🏠</span>
@@ -161,7 +161,7 @@ export default function HomePage() {
           placeholder="搜尋姓名、個案編號、電話、地址..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788] bg-white"
+          className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa] bg-white"
         />
         {visitFilter === 'all' && (
           <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1">
@@ -171,7 +171,7 @@ export default function HomePage() {
                 onClick={() => setStatusFilter(f.value)}
                 className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
                   statusFilter === f.value
-                    ? 'bg-[#2d6a4f] text-white font-medium'
+                    ? 'bg-[#7a9985] text-white font-medium'
                     : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
@@ -192,7 +192,7 @@ export default function HomePage() {
 
       {visitFilter !== 'all' && (
         <div className={`mb-3 px-4 py-2 rounded-lg text-sm font-medium ${
-          visitFilter === 'no-phone' ? 'bg-red-50 text-red-700' : 'bg-orange-50 text-orange-700'
+          visitFilter === 'no-phone' ? 'bg-[#f0e6e6] text-[#9b6464]' : 'bg-[#f0ebe0] text-[#9b7a50]'
         }`}>
           {visitFilter === 'no-phone' ? `📞 本月（${thisMonth + 1}月）尚未電訪的在案個案` : '🏠 近6個月尚未家訪的在案個案'}
           {' '}共 {filtered.length} 位
@@ -224,22 +224,22 @@ function CaseRow({ case_: c, visitFilter }: { case_: Case; visitFilter: VisitFil
   return (
     <Link
       href={`/cases/${c.id}`}
-      className="flex items-center gap-4 bg-white rounded-xl border border-gray-100 px-5 py-3.5 hover:shadow-md hover:border-[#52b788]/40 transition-all group"
+      className="flex items-center gap-4 bg-white rounded-xl border border-gray-100 px-5 py-3.5 hover:shadow-md hover:border-[#a3bcaa]/40 transition-all group"
     >
-      <div className="w-9 h-9 rounded-full bg-[#d8f3dc] flex items-center justify-center text-[#2d6a4f] font-bold text-sm flex-shrink-0">
+      <div className="w-9 h-9 rounded-full bg-[#e6ede7] flex items-center justify-center text-[#7a9985] font-bold text-sm flex-shrink-0">
         {c.name?.[0] || '?'}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-gray-800 group-hover:text-[#2d6a4f] transition-colors">{c.name}</span>
+          <span className="font-semibold text-gray-800 group-hover:text-[#7a9985] transition-colors">{c.name}</span>
           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLOR[c.status] || STATUS_COLOR.active}`}>
             {STATUS_LABEL[c.status] || '在案'}
           </span>
           {c.status === 'active' && !hasPhoneThisMonth && (
-            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">未電訪</span>
+            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#f0e6e6] text-[#9b6464]">未電訪</span>
           )}
           {c.status === 'active' && !hasHomeInSixMonths && (
-            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-600">未家訪</span>
+            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#f0ebe0] text-[#9b7a50]">未家訪</span>
           )}
         </div>
         <div className="flex gap-4 mt-0.5 text-sm text-gray-400">
@@ -252,7 +252,7 @@ function CaseRow({ case_: c, visitFilter }: { case_: Case; visitFilter: VisitFil
         {c.phone && <div>{c.phone}</div>}
         {c.address && <div className="truncate max-w-[180px] text-xs mt-0.5">{c.address}</div>}
       </div>
-      <span className="text-gray-300 group-hover:text-[#2d6a4f] transition-colors text-lg">›</span>
+      <span className="text-gray-300 group-hover:text-[#7a9985] transition-colors text-lg">›</span>
     </Link>
   )
 }

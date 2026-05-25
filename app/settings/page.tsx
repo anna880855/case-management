@@ -68,7 +68,7 @@ export default function SettingsPage() {
               value={settings.organizationName}
               onChange={e => updateSettings({ organizationName: e.target.value })}
               placeholder="長照機構或單位名稱"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
             />
           </div>
           <div>
@@ -78,7 +78,7 @@ export default function SettingsPage() {
               value={settings.managerName}
               onChange={e => updateSettings({ managerName: e.target.value })}
               placeholder="姓名"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
             />
           </div>
           <div>
@@ -88,14 +88,14 @@ export default function SettingsPage() {
               value={settings.managerPhone}
               onChange={e => updateSettings({ managerPhone: e.target.value })}
               placeholder="0900000000"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
             />
           </div>
         </div>
         <button
           onClick={handleSave}
           className={`mt-4 px-6 py-2 rounded-lg text-sm font-medium transition-colors ${
-            saved ? 'bg-green-500 text-white' : 'bg-[#2d6a4f] text-white hover:bg-[#1b4332]'
+            saved ? 'bg-green-500 text-white' : 'bg-[#7a9985] text-white hover:bg-[#50665b]'
           }`}
         >
           {saved ? '✓ 已儲存' : '儲存'}
@@ -112,7 +112,7 @@ export default function SettingsPage() {
             value={settings.appsScriptUrl}
             onChange={e => updateSettings({ appsScriptUrl: e.target.value })}
             placeholder="https://script.google.com/macros/s/.../exec"
-            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
           />
           <button
             onClick={handleTestSync}
@@ -153,7 +153,7 @@ export default function SettingsPage() {
               value={settings.phoneVisitSheetName || '電訪紀錄'}
               onChange={e => updateSettings({ phoneVisitSheetName: e.target.value })}
               placeholder="電訪紀錄"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
             />
           </div>
           <div>
@@ -163,7 +163,7 @@ export default function SettingsPage() {
               value={settings.homeVisitSheetName || '家訪紀錄'}
               onChange={e => updateSettings({ homeVisitSheetName: e.target.value })}
               placeholder="家訪紀錄"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
             />
           </div>
         </div>
@@ -178,7 +178,7 @@ export default function SettingsPage() {
           value={settings.claudeApiKey}
           onChange={e => updateSettings({ claudeApiKey: e.target.value })}
           placeholder="sk-ant-..."
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
         />
         <p className="text-xs text-gray-400 mt-2">
           到 <span className="font-medium">console.anthropic.com</span> 申請 API Key（需信用卡，約 $5 可用數百次）
@@ -210,7 +210,7 @@ export default function SettingsPage() {
               onChange={e => setNewSentence(prev => ({ ...prev, category: e.target.value }))}
               placeholder="分類"
               list="cat-list"
-              className="w-32 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+              className="w-32 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
             />
             <datalist id="cat-list">
               {categories.map(c => <option key={c} value={c} />)}
@@ -221,11 +221,11 @@ export default function SettingsPage() {
               onChange={e => setNewSentence(prev => ({ ...prev, text: e.target.value }))}
               onKeyDown={e => e.key === 'Enter' && handleAddSentence()}
               placeholder="句型內容"
-              className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+              className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
             />
             <button
               onClick={handleAddSentence}
-              className="px-4 py-2 bg-[#2d6a4f] text-white rounded-lg text-sm hover:bg-[#1b4332] transition-colors"
+              className="px-4 py-2 bg-[#7a9985] text-white rounded-lg text-sm hover:bg-[#50665b] transition-colors"
             >
               新增
             </button>

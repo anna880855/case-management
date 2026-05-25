@@ -291,7 +291,7 @@ ${content}${customNote ? `　${customNote}` : ''}
               placeholder="搜尋姓名 / 編號…"
               value={caseSearch}
               onChange={e => setCaseSearch(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
             />
             <div className="max-h-52 overflow-y-auto space-y-0.5">
               {filteredCases.map(c => (
@@ -300,7 +300,7 @@ ${content}${customNote ? `　${customNote}` : ''}
                   onClick={() => handleSelectCase(c.id)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                     selectedCaseId === c.id
-                      ? 'bg-[#d8f3dc] text-[#2d6a4f] font-medium'
+                      ? 'bg-[#e6ede7] text-[#7a9985] font-medium'
                       : 'hover:bg-gray-50 text-gray-700'
                   }`}
                 >
@@ -321,7 +321,7 @@ ${content}${customNote ? `　${customNote}` : ''}
                 type="date"
                 value={date}
                 onChange={e => setDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
               />
             </div>
             <div>
@@ -330,7 +330,7 @@ ${content}${customNote ? `　${customNote}` : ''}
                 type="time"
                 value={time}
                 onChange={e => setTime(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
               />
             </div>
             <div>
@@ -340,26 +340,26 @@ ${content}${customNote ? `　${customNote}` : ''}
                 value={target}
                 onChange={e => setTarget(e.target.value)}
                 placeholder={selectedCase?.guardian || '個案或照顧者姓名'}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
               />
             </div>
           </div>
 
           {selectedCase && (
-            <div className="bg-[#d8f3dc] rounded-xl p-4">
-              <p className="font-semibold text-[#2d6a4f] text-sm">{selectedCase.name}</p>
+            <div className="bg-[#e6ede7] rounded-xl p-4">
+              <p className="font-semibold text-[#7a9985] text-sm">{selectedCase.name}</p>
               {selectedCase.careLevel && (
-                <p className="text-xs text-[#2d6a4f]/70 mt-1">照顧等級：{selectedCase.careLevel}</p>
+                <p className="text-xs text-[#7a9985]/70 mt-1">照顧等級：{selectedCase.careLevel}</p>
               )}
               {selectedCase.services && selectedCase.services.length > 0 && (
                 <div className="mt-1.5 flex flex-wrap gap-1">
                   {selectedCase.services.map((s, i) => (
-                    <span key={i} className="text-xs bg-white/60 text-[#2d6a4f] px-1.5 py-0.5 rounded-full">{s}</span>
+                    <span key={i} className="text-xs bg-white/60 text-[#7a9985] px-1.5 py-0.5 rounded-full">{s}</span>
                   ))}
                 </div>
               )}
               {recentVisits.length > 0 && (
-                <p className="text-xs text-[#2d6a4f]/50 mt-1.5">上次電訪：{recentVisits[0].date}</p>
+                <p className="text-xs text-[#7a9985]/50 mt-1.5">上次電訪：{recentVisits[0].date}</p>
               )}
             </div>
           )}
@@ -377,7 +377,7 @@ ${content}${customNote ? `　${customNote}` : ''}
               <button
                 onClick={() => autoSelect(selectedCase)}
                 disabled={!hasSentences}
-                className="px-3 py-1.5 text-sm border border-[#52b788] text-[#2d6a4f] rounded-lg hover:bg-[#d8f3dc] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="px-3 py-1.5 text-sm border border-[#a3bcaa] text-[#7a9985] rounded-lg hover:bg-[#e6ede7] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 🔀 重新隨機
               </button>
@@ -395,7 +395,7 @@ ${content}${customNote ? `　${customNote}` : ''}
                   return (
                     <div key={cat} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
                       <div className="flex-1 min-w-0">
-                        <span className="inline-block text-xs font-semibold text-[#2d6a4f] bg-[#d8f3dc] px-1.5 py-0.5 rounded mr-2 mb-1">
+                        <span className="inline-block text-xs font-semibold text-[#7a9985] bg-[#e6ede7] px-1.5 py-0.5 rounded mr-2 mb-1">
                           {CATEGORY_LABELS[cat]}
                         </span>
                         <span className="text-sm text-gray-700 leading-relaxed">
@@ -405,7 +405,7 @@ ${content}${customNote ? `　${customNote}` : ''}
                       <button
                         onClick={() => swapOne(cat)}
                         disabled={pool.length === 0}
-                        className="flex-shrink-0 text-xs text-gray-400 hover:text-[#2d6a4f] border border-gray-200 hover:border-[#52b788] rounded px-2 py-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="flex-shrink-0 text-xs text-gray-400 hover:text-[#7a9985] border border-gray-200 hover:border-[#a3bcaa] rounded px-2 py-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         換一句
                       </button>
@@ -427,7 +427,7 @@ ${content}${customNote ? `　${customNote}` : ''}
                   const tracking = goalTracking[key]
                   return (
                     <div key={key} className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-xs font-semibold text-[#2d6a4f] mb-1">{goalLabels[key]}</p>
+                      <p className="text-xs font-semibold text-[#7a9985] mb-1">{goalLabels[key]}</p>
                       <p className="text-sm text-gray-700 mb-2">{goalText}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {GOAL_STATUSES.map(s => (
@@ -436,8 +436,8 @@ ${content}${customNote ? `　${customNote}` : ''}
                             onClick={() => setGoalTracking(p => ({ ...p, [key]: { ...p[key], status: s } }))}
                             className={`px-2.5 py-1 text-xs rounded-lg border transition-colors ${
                               tracking.status === s
-                                ? 'bg-[#2d6a4f] text-white border-[#2d6a4f]'
-                                : 'bg-white text-gray-600 border-gray-200 hover:border-[#52b788]'
+                                ? 'bg-[#7a9985] text-white border-[#7a9985]'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-[#a3bcaa]'
                             }`}
                           >
                             {s}
@@ -450,7 +450,7 @@ ${content}${customNote ? `　${customNote}` : ''}
                             value={tracking.percent}
                             onChange={e => setGoalTracking(p => ({ ...p, [key]: { ...p[key], percent: e.target.value } }))}
                             placeholder="百分比"
-                            className="w-20 px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#52b788]"
+                            className="w-20 px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]"
                           />
                         )}
                       </div>
@@ -472,7 +472,7 @@ ${content}${customNote ? `　${customNote}` : ''}
               onChange={e => setCustomNote(e.target.value)}
               placeholder="例：個案本週回診，醫師調整血壓藥劑量；照顧者反應近期較疲憊，詢問喘息服務…"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788] resize-none"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa] resize-none"
             />
           </div>
 
@@ -484,14 +484,14 @@ ${content}${customNote ? `　${customNote}` : ''}
             <button
               onClick={handleQuickCombine}
               disabled={!selectedCaseId || pickedSentences.length === 0 || !hasSentences}
-              className="flex-1 py-3 bg-white border-2 border-[#2d6a4f] text-[#2d6a4f] rounded-xl font-semibold hover:bg-[#d8f3dc] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 py-3 bg-white border-2 border-[#7a9985] text-[#7a9985] rounded-xl font-semibold hover:bg-[#e6ede7] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               ⚡ 直接組合
             </button>
             <button
               onClick={handleGenerate}
               disabled={generating || !selectedCaseId || pickedSentences.length === 0 || !hasSentences}
-              className="flex-1 py-3 bg-[#2d6a4f] text-white rounded-xl font-semibold hover:bg-[#1b4332] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              className="flex-1 py-3 bg-[#7a9985] text-white rounded-xl font-semibold hover:bg-[#50665b] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
               {generating ? (
                 <>
@@ -526,7 +526,7 @@ ${content}${customNote ? `　${customNote}` : ''}
                     onClick={handleSave}
                     disabled={saved}
                     className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
-                      saved ? 'bg-green-100 text-green-700' : 'bg-[#2d6a4f] text-white hover:bg-[#1b4332]'
+                      saved ? 'bg-green-100 text-green-700' : 'bg-[#7a9985] text-white hover:bg-[#50665b]'
                     }`}
                   >
                     {saved ? '✓ 已儲存' : '💾 儲存'}
