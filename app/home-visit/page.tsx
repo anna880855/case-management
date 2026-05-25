@@ -28,12 +28,12 @@ function CheckGroup({ options, selected, onChange, cols = 3 }: {
   return (
     <div className={`grid gap-1.5`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
       {options.map(opt => (
-        <label key={opt} className="flex items-center gap-1.5 cursor-pointer text-sm text-gray-700 hover:text-[#2d6a4f]">
+        <label key={opt} className="flex items-center gap-1.5 cursor-pointer text-sm text-gray-700 hover:text-[#7a9985]">
           <input
             type="checkbox"
             checked={selected.includes(opt)}
             onChange={() => toggle(opt)}
-            className="accent-[#2d6a4f] w-3.5 h-3.5 flex-shrink-0"
+            className="accent-[#7a9985] w-3.5 h-3.5 flex-shrink-0"
           />
           <span className="leading-tight">{opt}</span>
         </label>
@@ -55,8 +55,8 @@ function RadioGroup({ options, value, onChange }: {
           onClick={() => onChange(value === opt ? '' : opt)}
           className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
             value === opt
-              ? 'bg-[#2d6a4f] text-white border-[#2d6a4f]'
-              : 'bg-white text-gray-600 border-gray-200 hover:border-[#52b788] hover:text-[#2d6a4f]'
+              ? 'bg-[#7a9985] text-white border-[#7a9985]'
+              : 'bg-white text-gray-600 border-gray-200 hover:border-[#a3bcaa] hover:text-[#7a9985]'
           }`}
         >
           {opt}
@@ -71,7 +71,7 @@ function GenButton({ onClick, loading, label }: { onClick: () => void; loading: 
     <button
       onClick={onClick}
       disabled={loading}
-      className="flex items-center gap-2 px-4 py-2 bg-[#2d6a4f] text-white rounded-lg text-sm font-semibold hover:bg-[#1b4332] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      className="flex items-center gap-2 px-4 py-2 bg-[#7a9985] text-white rounded-lg text-sm font-semibold hover:bg-[#50665b] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
       {loading ? (
         <>
@@ -92,12 +92,12 @@ function GeneratedText({ text, onChange }: { text: string; onChange: (t: string)
   const [editing, setEditing] = useState(false)
   if (!text) return null
   return (
-    <div className="mt-3 rounded-lg border border-[#52b788]/40 bg-[#d8f3dc]/30 overflow-hidden">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[#d8f3dc]/60 border-b border-[#52b788]/30">
-        <span className="text-xs font-medium text-[#2d6a4f]">AI 產生內容</span>
+    <div className="mt-3 rounded-lg border border-[#a3bcaa]/40 bg-[#e6ede7]/30 overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[#e6ede7]/60 border-b border-[#a3bcaa]/30">
+        <span className="text-xs font-medium text-[#7a9985]">AI 產生內容</span>
         <button
           onClick={() => setEditing(e => !e)}
-          className="text-xs text-[#52b788] hover:text-[#2d6a4f] underline"
+          className="text-xs text-[#a3bcaa] hover:text-[#7a9985] underline"
         >
           {editing ? '完成編輯' : '編輯'}
         </button>
@@ -768,7 +768,7 @@ ${problemSection}
               placeholder="搜尋姓名 / 編號…"
               value={caseSearch}
               onChange={e => setCaseSearch(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
             />
             <div className="max-h-52 overflow-y-auto space-y-0.5">
               {filteredCases.map(c => (
@@ -782,7 +782,7 @@ ${problemSection}
                   }}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                     selectedCaseId === c.id
-                      ? 'bg-[#d8f3dc] text-[#2d6a4f] font-medium'
+                      ? 'bg-[#e6ede7] text-[#7a9985] font-medium'
                       : 'hover:bg-gray-50 text-gray-700'
                   }`}
                 >
@@ -804,7 +804,7 @@ ${problemSection}
                 type="date"
                 value={date}
                 onChange={e => setDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
               />
             </div>
             <div>
@@ -814,7 +814,7 @@ ${problemSection}
                 value={visitTarget}
                 onChange={e => setVisitTarget(e.target.value)}
                 placeholder={selectedCase?.guardian || '個案及家屬'}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
               />
             </div>
             <div className="text-xs text-gray-500 border-t border-gray-50 pt-2">
@@ -826,22 +826,22 @@ ${problemSection}
 
           {/* Selected case card */}
           {selectedCase && (
-            <div className="bg-[#d8f3dc] rounded-xl p-4">
-              <p className="font-semibold text-[#2d6a4f]">{selectedCase.name}</p>
+            <div className="bg-[#e6ede7] rounded-xl p-4">
+              <p className="font-semibold text-[#7a9985]">{selectedCase.name}</p>
               {selectedCase.caseNumber && (
-                <p className="text-xs text-[#2d6a4f]/70 mt-0.5">編號：{selectedCase.caseNumber}</p>
+                <p className="text-xs text-[#7a9985]/70 mt-0.5">編號：{selectedCase.caseNumber}</p>
               )}
               {selectedCase.careLevel && (
-                <p className="text-xs text-[#2d6a4f]/70">照顧等級：{selectedCase.careLevel}</p>
+                <p className="text-xs text-[#7a9985]/70">照顧等級：{selectedCase.careLevel}</p>
               )}
               {selectedCase.disability && (
-                <p className="text-xs text-[#2d6a4f]/70">失能：{selectedCase.disability}</p>
+                <p className="text-xs text-[#7a9985]/70">失能：{selectedCase.disability}</p>
               )}
               {selectedCase.guardian && (
-                <p className="text-xs text-[#2d6a4f]/70">照顧者：{selectedCase.guardian}</p>
+                <p className="text-xs text-[#7a9985]/70">照顧者：{selectedCase.guardian}</p>
               )}
               {recentVisits.length > 0 && (
-                <p className="text-xs text-[#2d6a4f]/50 mt-1.5">上次家訪：{recentVisits[0].date}</p>
+                <p className="text-xs text-[#7a9985]/50 mt-1.5">上次家訪：{recentVisits[0].date}</p>
               )}
             </div>
           )}
@@ -853,7 +853,7 @@ ${problemSection}
                 <p className="text-sm font-semibold text-gray-700">草稿</p>
                 <button
                   onClick={() => setShowDraftSave(v => !v)}
-                  className="text-xs px-2.5 py-1 bg-[#d8f3dc] text-[#2d6a4f] rounded-lg hover:bg-[#b7e4c7] transition-colors"
+                  className="text-xs px-2.5 py-1 bg-[#e6ede7] text-[#7a9985] rounded-lg hover:bg-[#b7e4c7] transition-colors"
                 >
                   存草稿
                 </button>
@@ -866,13 +866,13 @@ ${problemSection}
                     value={draftLabel}
                     onChange={e => setDraftLabel(e.target.value)}
                     placeholder={`${date} 草稿`}
-                    className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+                    className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
                   />
                   <div className="flex gap-2">
                     <button
                       onClick={handleSaveDraft}
                       disabled={savingDraft}
-                      className="flex-1 py-1.5 text-xs bg-[#2d6a4f] text-white rounded-lg hover:bg-[#1b4332] disabled:opacity-50"
+                      className="flex-1 py-1.5 text-xs bg-[#7a9985] text-white rounded-lg hover:bg-[#50665b] disabled:opacity-50"
                     >
                       {savingDraft ? '儲存中...' : '確認儲存'}
                     </button>
@@ -898,7 +898,7 @@ ${problemSection}
                   </div>
                   <button
                     onClick={() => { try { loadDraftData(JSON.parse(d.data)) } catch {} }}
-                    className="text-xs px-2 py-1 text-[#2d6a4f] border border-[#52b788] rounded-lg hover:bg-[#d8f3dc] transition-colors flex-shrink-0"
+                    className="text-xs px-2 py-1 text-[#7a9985] border border-[#a3bcaa] rounded-lg hover:bg-[#e6ede7] transition-colors flex-shrink-0"
                   >
                     載入
                   </button>
@@ -924,12 +924,12 @@ ${problemSection}
                 onClick={() => setActiveTab(i)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === i
-                    ? 'bg-[#2d6a4f] text-white'
+                    ? 'bg-[#7a9985] text-white'
                     : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
                 {tabDone[i] && activeTab !== i && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#52b788] flex-shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#a3bcaa] flex-shrink-0" />
                 )}
                 {tab}
               </button>
@@ -956,7 +956,7 @@ ${problemSection}
                           type="checkbox"
                           checked={!!diseaseChecked[d.key]}
                           onChange={e => setDiseaseChecked(prev => ({ ...prev, [d.key]: e.target.checked }))}
-                          className="accent-[#2d6a4f] w-4 h-4 flex-shrink-0"
+                          className="accent-[#7a9985] w-4 h-4 flex-shrink-0"
                         />
                         <span className="text-sm font-medium text-gray-700">{d.label}</span>
                       </label>
@@ -976,7 +976,7 @@ ${problemSection}
                                         [d.key]: toggle(prev[d.key] || [], sub),
                                       }))
                                     }
-                                    className="accent-[#52b788] w-3 h-3"
+                                    className="accent-[#a3bcaa] w-3 h-3"
                                   />
                                   {sub}
                                 </label>
@@ -991,7 +991,7 @@ ${problemSection}
                               onChange={e =>
                                 setDiseaseTexts(prev => ({ ...prev, [d.key]: e.target.value }))
                               }
-                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-[#52b788]"
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]"
                             />
                           )}
                         </div>
@@ -1012,7 +1012,7 @@ ${problemSection}
                       value={hospital}
                       onChange={e => setHospital(e.target.value)}
                       placeholder="醫院名稱"
-                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
                     />
                   </div>
                   <div>
@@ -1084,7 +1084,7 @@ ${problemSection}
                         placeholder="截肢部位"
                         value={ampLocation}
                         onChange={e => setAmpLocation(e.target.value)}
-                        className="mt-2 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788] w-full"
+                        className="mt-2 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa] w-full"
                       />
                     )}
                   </div>
@@ -1108,7 +1108,7 @@ ${problemSection}
                     <SectionLabel>睡眠</SectionLabel>
                     <CheckGroup options={SLEEP_OPTIONS} selected={sleep} onChange={setSleep} cols={3} />
                     {sleep.includes('失眠') && (
-                      <div className="mt-2 space-y-2 ml-2 border-l-2 border-[#52b788]/30 pl-3">
+                      <div className="mt-2 space-y-2 ml-2 border-l-2 border-[#a3bcaa]/30 pl-3">
                         <div>
                           <SectionLabel>安眠藥物</SectionLabel>
                           <CheckGroup options={SLEEP_INSOMNIA_MED} selected={sleepInsomniaMed} onChange={setSleepInsomniaMed} cols={2} />
@@ -1133,7 +1133,7 @@ ${problemSection}
                         placeholder="洗腎地點"
                         value={dialysisLocation}
                         onChange={e => setDialysisLocation(e.target.value)}
-                        className="mt-2 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788] w-full"
+                        className="mt-2 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa] w-full"
                       />
                     )}
                   </div>
@@ -1144,7 +1144,7 @@ ${problemSection}
                       onChange={e => setResidentialCare(e.target.value)}
                       placeholder="居家照顧安排描述…"
                       rows={2}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788] resize-none"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa] resize-none"
                     />
                   </div>
                 </Accordion>
@@ -1160,7 +1160,7 @@ ${problemSection}
                     <CheckGroup options={EATING_METHOD_OPTIONS} selected={eatingMethod} onChange={setEatingMethod} cols={2} />
                   </div>
                   {eatingMethod.includes('由口進食') && (
-                    <div className="ml-2 border-l-2 border-[#52b788]/30 pl-3 space-y-2">
+                    <div className="ml-2 border-l-2 border-[#a3bcaa]/30 pl-3 space-y-2">
                       <div>
                         <SectionLabel>牙齒狀況</SectionLabel>
                         <CheckGroup options={TEETH_OPTIONS} selected={teethStatus} onChange={setTeethStatus} cols={2} />
@@ -1179,7 +1179,7 @@ ${problemSection}
                         value={tubeFeedingCans}
                         onChange={e => setTubeFeedingCans(e.target.value)}
                         placeholder="例：3罐"
-                        className="px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]"
+                        className="px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]"
                       />
                     </div>
                   )}
@@ -1200,7 +1200,7 @@ ${problemSection}
                         value={nutritionExtra}
                         onChange={e => setNutritionExtra(e.target.value)}
                         placeholder="其他營養來源詳述"
-                        className="mt-2 w-full px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]"
+                        className="mt-2 w-full px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]"
                       />
                     )}
                   </div>
@@ -1218,7 +1218,7 @@ ${problemSection}
                             name="grossMotor"
                             checked={grossMotor === l}
                             onChange={() => setGrossMotor(l)}
-                            className="accent-[#2d6a4f] mt-0.5 flex-shrink-0"
+                            className="accent-[#7a9985] mt-0.5 flex-shrink-0"
                           />
                           <span>{l}</span>
                         </label>
@@ -1238,8 +1238,8 @@ ${problemSection}
                           onClick={() => setFallFrequency(fallFrequency === f ? '' : f)}
                           className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
                             fallFrequency === f
-                              ? 'bg-[#2d6a4f] text-white border-[#2d6a4f]'
-                              : 'bg-white text-gray-600 border-gray-200 hover:border-[#52b788]'
+                              ? 'bg-[#7a9985] text-white border-[#7a9985]'
+                              : 'bg-white text-gray-600 border-gray-200 hover:border-[#a3bcaa]'
                           }`}
                         >
                           {f}
@@ -1252,7 +1252,7 @@ ${problemSection}
                             value={fallCount}
                             onChange={e => setFallCount(e.target.value)}
                             placeholder="次數"
-                            className="w-16 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]"
+                            className="w-16 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]"
                           />
                           <span className="text-sm text-gray-500">次/年</span>
                         </div>
@@ -1268,7 +1268,7 @@ ${problemSection}
                     onChange={e => setCaseOther(e.target.value)}
                     placeholder="其他補充說明…"
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788] resize-none"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa] resize-none"
                   />
                 </Accordion>
 
@@ -1289,7 +1289,7 @@ ${problemSection}
                   onChange={e => setCaregiverInput(e.target.value)}
                   placeholder="例：主要照顧者為女兒，約50歲，白天上班，晚上回家協助沐浴及備餐，照顧壓力中等，偶有喘息需求…"
                   rows={8}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788] resize-none"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa] resize-none"
                 />
                 <div className="flex justify-end mt-3">
                   <GenButton onClick={handleGenCaregiver} loading={genCaregiver} label="✨ AI 潤飾" />
@@ -1316,10 +1316,10 @@ ${problemSection}
                             key={p}
                             className={`flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-sm transition-colors ${
                               inRanked
-                                ? 'border-[#2d6a4f] bg-[#d8f3dc]'
+                                ? 'border-[#7a9985] bg-[#e6ede7]'
                                 : selected2
-                                ? 'border-[#52b788] bg-[#d8f3dc]/40'
-                                : 'border-gray-100 bg-white hover:border-[#52b788]/50'
+                                ? 'border-[#a3bcaa] bg-[#e6ede7]/40'
+                                : 'border-gray-100 bg-white hover:border-[#a3bcaa]/50'
                             }`}
                           >
                             <label className="flex items-center gap-1.5 cursor-pointer flex-1 min-w-0">
@@ -1329,16 +1329,16 @@ ${problemSection}
                                 onChange={() =>
                                   setSelectedProblems(prev => toggle(prev, p))
                                 }
-                                className="accent-[#2d6a4f] w-3.5 h-3.5 flex-shrink-0"
+                                className="accent-[#7a9985] w-3.5 h-3.5 flex-shrink-0"
                               />
-                              <span className={`text-xs leading-tight ${inRanked ? 'text-[#2d6a4f] font-medium' : 'text-gray-700'}`}>
+                              <span className={`text-xs leading-tight ${inRanked ? 'text-[#7a9985] font-medium' : 'text-gray-700'}`}>
                                 {p}
                               </span>
                             </label>
                             {selected2 && !inRanked && rankedProblems.length < 5 && (
                               <button
                                 onClick={() => addToRanked(p)}
-                                className="text-[10px] text-[#2d6a4f] border border-[#52b788] rounded px-1 py-0.5 hover:bg-[#d8f3dc] ml-1 flex-shrink-0"
+                                className="text-[10px] text-[#7a9985] border border-[#a3bcaa] rounded px-1 py-0.5 hover:bg-[#e6ede7] ml-1 flex-shrink-0"
                               >
                                 排序
                               </button>
@@ -1359,15 +1359,15 @@ ${problemSection}
                       {rankedProblems.map((p, idx) => (
                         <div
                           key={p}
-                          className="flex items-center gap-1 bg-[#d8f3dc] rounded-lg px-2 py-1.5 border border-[#52b788]/30"
+                          className="flex items-center gap-1 bg-[#e6ede7] rounded-lg px-2 py-1.5 border border-[#a3bcaa]/30"
                         >
-                          <span className="text-xs font-bold text-[#2d6a4f] w-4 flex-shrink-0">{idx + 1}</span>
-                          <span className="text-xs text-[#1b4332] flex-1 leading-tight">{p}</span>
+                          <span className="text-xs font-bold text-[#7a9985] w-4 flex-shrink-0">{idx + 1}</span>
+                          <span className="text-xs text-[#50665b] flex-1 leading-tight">{p}</span>
                           <div className="flex gap-0.5 flex-shrink-0">
                             <button
                               onClick={() => moveRanked(idx, -1)}
                               disabled={idx === 0}
-                              className="p-0.5 text-[#52b788] hover:text-[#2d6a4f] disabled:opacity-30"
+                              className="p-0.5 text-[#a3bcaa] hover:text-[#7a9985] disabled:opacity-30"
                               title="上移"
                             >
                               ↑
@@ -1375,7 +1375,7 @@ ${problemSection}
                             <button
                               onClick={() => moveRanked(idx, 1)}
                               disabled={idx === rankedProblems.length - 1}
-                              className="p-0.5 text-[#52b788] hover:text-[#2d6a4f] disabled:opacity-30"
+                              className="p-0.5 text-[#a3bcaa] hover:text-[#7a9985] disabled:opacity-30"
                               title="下移"
                             >
                               ↓
@@ -1434,7 +1434,7 @@ ${problemSection}
                         onChange={e => setCareGoals(prev => ({ ...prev, [k]: e.target.value }))}
                         placeholder={`請填寫${k === 'short' ? '短期' : k === 'mid' ? '中期' : '長期'}目標…`}
                         rows={2}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788] resize-none"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa] resize-none"
                       />
                     </div>
                   ))}
@@ -1455,7 +1455,7 @@ ${problemSection}
                       type="checkbox"
                       checked={serviceEnabled}
                       onChange={e => setServiceEnabled(e.target.checked)}
-                      className="accent-[#2d6a4f] w-4 h-4"
+                      className="accent-[#7a9985] w-4 h-4"
                       id="serviceCheck"
                     />
                     <label htmlFor="serviceCheck" className="text-sm text-gray-700 cursor-pointer">需要照顧及專業服務</label>
@@ -1472,7 +1472,7 @@ ${problemSection}
                           value={s.units}
                           onChange={e => updateServiceUnits(s.id, e.target.value)}
                           placeholder="單位/月"
-                          className="w-24 px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-[#52b788]"
+                          className="w-24 px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]"
                         />
                         <span className="text-xs text-gray-400">單位/月</span>
                         <button
@@ -1491,7 +1491,7 @@ ${problemSection}
                   <div className="relative">
                     <button
                       onClick={() => setShowServiceDropdown(d => !d)}
-                      className="px-3 py-1.5 border border-[#52b788] text-[#2d6a4f] rounded-lg text-sm hover:bg-[#d8f3dc] transition-colors"
+                      className="px-3 py-1.5 border border-[#a3bcaa] text-[#7a9985] rounded-lg text-sm hover:bg-[#e6ede7] transition-colors"
                     >
                       + 新增服務
                     </button>
@@ -1509,7 +1509,7 @@ ${problemSection}
                                   <button
                                     key={i}
                                     onClick={() => addServiceFromCatalog(cat)}
-                                    className="w-full flex items-center gap-1.5 px-2 py-1 text-xs text-gray-700 hover:bg-[#d8f3dc] rounded-lg text-left"
+                                    className="w-full flex items-center gap-1.5 px-2 py-1 text-xs text-gray-700 hover:bg-[#e6ede7] rounded-lg text-left"
                                   >
                                     <span className="font-mono text-gray-400 w-14 flex-shrink-0">{cat.code}</span>
                                     {cat.name}
@@ -1535,12 +1535,12 @@ ${problemSection}
                             value={customServiceName}
                             onChange={e => setCustomServiceName(e.target.value)}
                             placeholder="服務名稱"
-                            className="flex-1 px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-[#52b788]"
+                            className="flex-1 px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]"
                             onKeyDown={e => e.key === 'Enter' && addCustomService()}
                           />
                           <button
                             onClick={addCustomService}
-                            className="px-2 py-1 bg-[#2d6a4f] text-white rounded text-xs hover:bg-[#1b4332]"
+                            className="px-2 py-1 bg-[#7a9985] text-white rounded text-xs hover:bg-[#50665b]"
                           >
                             加入
                           </button>
@@ -1559,7 +1559,7 @@ ${problemSection}
                       type="checkbox"
                       checked={transportEnabled}
                       onChange={e => setTransportEnabled(e.target.checked)}
-                      className="accent-[#2d6a4f] w-4 h-4"
+                      className="accent-[#7a9985] w-4 h-4"
                       id="transportCheck"
                     />
                     <label htmlFor="transportCheck" className="text-sm text-gray-700 cursor-pointer">需要交通接送</label>
@@ -1571,14 +1571,14 @@ ${problemSection}
                         value={transportation}
                         onChange={e => setTransportation(e.target.value)}
                         placeholder="費用（例：1840元/月）"
-                        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+                        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
                       />
                       <input
                         type="text"
                         value={transportHospital}
                         onChange={e => setTransportHospital(e.target.value)}
                         placeholder="目的地醫院/機構"
-                        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+                        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
                       />
                     </div>
                   )}
@@ -1591,7 +1591,7 @@ ${problemSection}
                     type="text"
                     value={aidsDetail}
                     onChange={e => setAidsDetail(e.target.value)}
-                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
                   />
                 </div>
 
@@ -1603,32 +1603,32 @@ ${problemSection}
                       type="checkbox"
                       checked={respiteEnabled}
                       onChange={e => setRespiteEnabled(e.target.checked)}
-                      className="accent-[#2d6a4f] w-4 h-4"
+                      className="accent-[#7a9985] w-4 h-4"
                       id="respiteCheck"
                     />
                     <label htmlFor="respiteCheck" className="text-sm text-gray-700 cursor-pointer">需要喘息服務</label>
                   </div>
                   {respiteEnabled && (
-                    <div className="ml-2 space-y-2.5 border-l-2 border-[#52b788]/30 pl-3">
+                    <div className="ml-2 space-y-2.5 border-l-2 border-[#a3bcaa]/30 pl-3">
                       <div>
                         <SectionLabel>額度期間</SectionLabel>
                         <div className="flex items-center gap-1 flex-wrap">
                           <span className="text-sm text-gray-500">自</span>
-                          <input type="text" value={respiteStartYear} onChange={e => setRespiteStartYear(e.target.value)} placeholder="民國年" className="w-16 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]" />
+                          <input type="text" value={respiteStartYear} onChange={e => setRespiteStartYear(e.target.value)} placeholder="民國年" className="w-16 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]" />
                           <span className="text-sm text-gray-500">年</span>
-                          <input type="text" value={respiteStartMonth} onChange={e => setRespiteStartMonth(e.target.value)} placeholder="月" className="w-10 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]" />
+                          <input type="text" value={respiteStartMonth} onChange={e => setRespiteStartMonth(e.target.value)} placeholder="月" className="w-10 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]" />
                           <span className="text-sm text-gray-500">月 至</span>
-                          <input type="text" value={respiteEndYear} onChange={e => setRespiteEndYear(e.target.value)} placeholder="民國年" className="w-16 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]" />
+                          <input type="text" value={respiteEndYear} onChange={e => setRespiteEndYear(e.target.value)} placeholder="民國年" className="w-16 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]" />
                           <span className="text-sm text-gray-500">年</span>
-                          <input type="text" value={respiteEndMonth} onChange={e => setRespiteEndMonth(e.target.value)} placeholder="月" className="w-10 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]" />
+                          <input type="text" value={respiteEndMonth} onChange={e => setRespiteEndMonth(e.target.value)} placeholder="月" className="w-10 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]" />
                           <span className="text-sm text-gray-500">月</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 flex-wrap">
                         <span className="text-sm text-gray-500">截至</span>
-                        <input type="text" value={respiteAsOfMonth} onChange={e => setRespiteAsOfMonth(e.target.value)} placeholder="月" className="w-10 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]" />
+                        <input type="text" value={respiteAsOfMonth} onChange={e => setRespiteAsOfMonth(e.target.value)} placeholder="月" className="w-10 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]" />
                         <span className="text-sm text-gray-500">月尚餘</span>
-                        <input type="text" value={respiteRemaining} onChange={e => setRespiteRemaining(e.target.value)} placeholder="金額" className="w-24 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]" />
+                        <input type="text" value={respiteRemaining} onChange={e => setRespiteRemaining(e.target.value)} placeholder="金額" className="w-24 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]" />
                         <span className="text-sm text-gray-500">元</span>
                       </div>
                       <div>
@@ -1637,11 +1637,11 @@ ${problemSection}
                           {respiteItems.map(item => (
                             <div key={item.id} className="flex items-center gap-1 flex-wrap">
                               <span className="text-sm text-gray-500">GA</span>
-                              <input type="text" value={item.code} onChange={e => setRespiteItems(prev => prev.map(i => i.id === item.id ? { ...i, code: e.target.value } : i))} placeholder="代碼" className="w-14 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]" />
+                              <input type="text" value={item.code} onChange={e => setRespiteItems(prev => prev.map(i => i.id === item.id ? { ...i, code: e.target.value } : i))} placeholder="代碼" className="w-14 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]" />
                               <span className="text-sm text-gray-500">[</span>
-                              <input type="text" value={item.name} onChange={e => setRespiteItems(prev => prev.map(i => i.id === item.id ? { ...i, name: e.target.value } : i))} placeholder="項目名稱" className="flex-1 min-w-[100px] px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]" />
+                              <input type="text" value={item.name} onChange={e => setRespiteItems(prev => prev.map(i => i.id === item.id ? { ...i, name: e.target.value } : i))} placeholder="項目名稱" className="flex-1 min-w-[100px] px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]" />
                               <span className="text-sm text-gray-500">] *</span>
-                              <input type="text" value={item.units} onChange={e => setRespiteItems(prev => prev.map(i => i.id === item.id ? { ...i, units: e.target.value } : i))} placeholder="單位" className="w-14 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]" />
+                              <input type="text" value={item.units} onChange={e => setRespiteItems(prev => prev.map(i => i.id === item.id ? { ...i, units: e.target.value } : i))} placeholder="單位" className="w-14 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]" />
                               <span className="text-sm text-gray-500">單位/年</span>
                               <button onClick={() => setRespiteItems(prev => prev.filter(i => i.id !== item.id))} className="text-red-400 hover:text-red-600 ml-1">×</button>
                             </div>
@@ -1649,7 +1649,7 @@ ${problemSection}
                         </div>
                         <button
                           onClick={() => setRespiteItems(prev => [...prev, { id: Date.now().toString(), code: '', name: '', units: '' }])}
-                          className="px-2.5 py-1 text-xs border border-[#52b788] text-[#2d6a4f] rounded hover:bg-[#d8f3dc] transition-colors"
+                          className="px-2.5 py-1 text-xs border border-[#a3bcaa] text-[#7a9985] rounded hover:bg-[#e6ede7] transition-colors"
                         >
                           + 新增項目
                         </button>
@@ -1665,7 +1665,7 @@ ${problemSection}
                     type="text"
                     value={referral}
                     onChange={e => setReferral(e.target.value)}
-                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#52b788]"
+                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
                   />
                 </div>
               </div>
@@ -1690,11 +1690,11 @@ ${problemSection}
                       key={label}
                       className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border ${
                         done
-                          ? 'border-[#52b788] bg-[#d8f3dc]/50 text-[#2d6a4f]'
+                          ? 'border-[#a3bcaa] bg-[#e6ede7]/50 text-[#7a9985]'
                           : 'border-gray-100 bg-gray-50 text-gray-400'
                       }`}
                     >
-                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${done ? 'bg-[#52b788]' : 'bg-gray-300'}`} />
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${done ? 'bg-[#a3bcaa]' : 'bg-gray-300'}`} />
                       {label}
                       {!done && <span className="text-xs ml-auto">未完成</span>}
                     </div>
@@ -1706,9 +1706,9 @@ ${problemSection}
                 </div>
 
                 {finalDoc && (
-                  <div className="border border-[#52b788]/40 rounded-xl overflow-hidden">
-                    <div className="flex items-center justify-between px-4 py-2 bg-[#d8f3dc]/60 border-b border-[#52b788]/30">
-                      <span className="text-sm font-semibold text-[#2d6a4f]">家訪記錄</span>
+                  <div className="border border-[#a3bcaa]/40 rounded-xl overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-2 bg-[#e6ede7]/60 border-b border-[#a3bcaa]/30">
+                      <span className="text-sm font-semibold text-[#7a9985]">家訪記錄</span>
                       <div className="flex gap-2">
                         <button
                           onClick={() => navigator.clipboard.writeText(finalDoc)}
@@ -1728,7 +1728,7 @@ ${problemSection}
                           className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-colors ${
                             saved
                               ? 'bg-green-100 text-green-700 border border-green-200'
-                              : 'bg-[#2d6a4f] text-white hover:bg-[#1b4332]'
+                              : 'bg-[#7a9985] text-white hover:bg-[#50665b]'
                           }`}
                         >
                           {saved ? '✓ 已儲存' : '儲存'}
@@ -1742,14 +1742,14 @@ ${problemSection}
                       className="w-full p-4 text-sm text-gray-700 font-sans leading-relaxed bg-white resize-y focus:outline-none"
                     />
                     {selectedCase && (careGoals.short || careGoals.mid || careGoals.long) && (
-                      <div className="border-t border-[#52b788]/30 px-4 py-3 bg-[#f0faf4]">
+                      <div className="border-t border-[#a3bcaa]/30 px-4 py-3 bg-[#f0faf4]">
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-xs font-semibold text-[#2d6a4f]">更新照顧目標至個案資料</p>
+                          <p className="text-xs font-semibold text-[#7a9985]">更新照顧目標至個案資料</p>
                           <button
                             onClick={handleSyncGoals}
                             disabled={goalSyncing}
                             className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
-                              goalSynced ? 'bg-green-100 text-green-700' : 'bg-[#2d6a4f] text-white hover:bg-[#1b4332] disabled:opacity-50'
+                              goalSynced ? 'bg-green-100 text-green-700' : 'bg-[#7a9985] text-white hover:bg-[#50665b] disabled:opacity-50'
                             }`}
                           >
                             {goalSynced ? '✓ 已更新' : goalSyncing ? '更新中...' : '同步目標'}
@@ -1759,19 +1759,19 @@ ${problemSection}
                           {careGoals.short && (
                             <div>
                               <label className="text-xs text-gray-400">短期目標</label>
-                              <input value={careGoals.short} onChange={e => setCareGoals(p => ({ ...p, short: e.target.value }))} className="w-full mt-0.5 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]" />
+                              <input value={careGoals.short} onChange={e => setCareGoals(p => ({ ...p, short: e.target.value }))} className="w-full mt-0.5 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]" />
                             </div>
                           )}
                           {careGoals.mid && (
                             <div>
                               <label className="text-xs text-gray-400">中期目標</label>
-                              <input value={careGoals.mid} onChange={e => setCareGoals(p => ({ ...p, mid: e.target.value }))} className="w-full mt-0.5 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]" />
+                              <input value={careGoals.mid} onChange={e => setCareGoals(p => ({ ...p, mid: e.target.value }))} className="w-full mt-0.5 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]" />
                             </div>
                           )}
                           {careGoals.long && (
                             <div>
                               <label className="text-xs text-gray-400">長期目標</label>
-                              <input value={careGoals.long} onChange={e => setCareGoals(p => ({ ...p, long: e.target.value }))} className="w-full mt-0.5 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#52b788]" />
+                              <input value={careGoals.long} onChange={e => setCareGoals(p => ({ ...p, long: e.target.value }))} className="w-full mt-0.5 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]" />
                             </div>
                           )}
                         </div>

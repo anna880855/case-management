@@ -43,10 +43,10 @@ export default function Sidebar() {
   const activeCases = cases.filter(c => c.status === 'active').length
 
   return (
-    <aside className="w-56 bg-[#1b4332] text-white flex flex-col h-full flex-shrink-0">
+    <aside className="w-56 bg-[#50665b] text-white flex flex-col h-full flex-shrink-0">
       <div className="p-5 border-b border-white/10">
         <h1 className="text-base font-bold leading-tight">個案管理系統</h1>
-        <p className="text-xs text-[#95d5b2] mt-1">
+        <p className="text-xs text-[#aec4b6] mt-1">
           {activeCases > 0 ? `在案 ${activeCases} 位` : '尚無個案'}
         </p>
       </div>
@@ -72,7 +72,7 @@ export default function Sidebar() {
         <button
           onClick={handleSync}
           disabled={syncing}
-          className="w-full flex items-center justify-center gap-2 py-2 bg-[#52b788] hover:bg-[#74c69d] disabled:opacity-60 rounded-lg text-sm font-medium transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-2 bg-[#a3bcaa] hover:bg-[#b4c9bb] disabled:opacity-60 rounded-lg text-sm font-medium transition-colors"
         >
           {syncing ? (
             <>
@@ -85,7 +85,7 @@ export default function Sidebar() {
           ) : '☁️ 同步個案'}
         </button>
         {syncMsg && (
-          <p className="text-xs text-center text-[#95d5b2] leading-tight">{syncMsg}</p>
+          <p className="text-xs text-center text-[#aec4b6] leading-tight">{syncMsg}</p>
         )}
         {settings.managerName && (
           <p className="text-xs text-white/50 text-center">{settings.managerName}</p>
