@@ -74,6 +74,7 @@ interface StoreState {
 
 interface StoreActions {
   setCases: (cases: Case[]) => void
+  addCase: (case_: Case) => void
   updateCaseStatus: (id: string, status: Case['status']) => void
   updateCase: (id: string, fields: Partial<Case>) => void
   deleteCase: (id: string) => void
@@ -108,6 +109,9 @@ export const useStore = create<StoreState & StoreActions>()(
       },
 
       setCases: (cases) => set({ cases }),
+
+      addCase: (case_) =>
+        set((state) => ({ cases: [case_, ...state.cases] })),
 
       updateCaseStatus: (id, status) =>
         set((state) => ({
