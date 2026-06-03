@@ -48,12 +48,143 @@ function useVisitStatus(caseId: string) {
   return { hasPhoneThisMonth, hasHomeInSixMonths }
 }
 
+const EMPTY_FORM = {
+  name: '', caseNumber: '', phone: '', address: '',
+  careLevel: '', guardian: '', guardianPhone: '',
+  birthDate: '', disability: '', notes: '',
+  status: 'active' as Case['status'],
+}
+
+function NewCaseModal({ onClose }: { onClose: () => void }) {
+  const { addCase } = useStore()
+  const [form, setForm] = useState(EMPTY_FORM)
+  const [saving, setSaving] = useState(false)
+
+  const set = (field: string, value: string) =>
+    setForm(prev => ({ ...prev, [field]: value }))
+
+  const handleSubmit = async () => {
+    if (!form.name.trim()) return
+    setSaving(true)
+    const newCase: Case = {
+      id: Date.now().toString(),
+      name: form.name.trim(),
+      caseNumber: form.caseNumber.trim(),
+      phone: form.phone.trim(),
+      address: form.address.trim(),
+      birthDate: form.birthDate,
+      idNumber: '',
+      gender: '',
+      status: form.status,
+      startDate: new Date().toISOString().split('T')[0],
+      careLevel: form.careLevel.trim(),
+      disability: form.disability.trim(),
+      guardian: form.guardian.trim(),
+      guardianPhone: form.guardianPhone.trim(),
+      notes: form.notes.trim(),
+      services: [],
+    }
+    addCase(newCase)
+    setSaving(false)
+    onClose()
+  }
+
+  const Field = ({ label, field, placeholder = '', type = 'text' }: { label: string; field: string; placeholder?: string; type?: string }) => (
+    <div>
+      <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+      <input
+        type={type}
+        value={(form as Record<string, string>)[field]}
+        onChange={e => set(field, e.target.value)}
+        placeholder={placeholder}
+        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
+      />
+    </div>
+  )
+
+  return (
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h3 className="text-base font-semibold text-gray-800">新增個案</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <label className="block text-xs font-medium text-gray-600 mb-1">姓名 <span className="text-red-400">*</span></label>
+              <input
+                type="text"
+                value={form.name}
+                onChange={e => set('name', e.target.value)}
+                placeholder="請輸入個案姓名"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
+                autoFocus
+              />
+            </div>
+            <Field label="個案編號" field="caseNumber" placeholder="選填" />
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">狀態</label>
+              <select
+                value={form.status}
+                onChange={e => set('status', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
+              >
+                <option value="active">在案</option>
+                <option value="suspended">暫停</option>
+                <option value="closed">結案</option>
+              </select>
+            </div>
+            <Field label="電話" field="phone" placeholder="選填" />
+            <Field label="生日" field="birthDate" type="date" />
+            <div className="col-span-2">
+              <Field label="地址" field="address" placeholder="選填" />
+            </div>
+            <Field label="照顧等級" field="careLevel" placeholder="例：第三級" />
+            <Field label="身心障礙" field="disability" placeholder="選填" />
+            <Field label="主要照顧者" field="guardian" placeholder="選填" />
+            <Field label="照顧者電話" field="guardianPhone" placeholder="選填" />
+            <div className="col-span-2">
+              <label className="block text-xs font-medium text-gray-600 mb-1">備註</label>
+              <textarea
+                value={form.notes}
+                onChange={e => set('notes', e.target.value)}
+                rows={2}
+                placeholder="選填"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa] resize-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3 px-6 pb-5">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            取消
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!form.name.trim() || saving}
+            className="flex-1 py-2.5 bg-[#7a9985] text-white rounded-xl text-sm font-medium hover:bg-[#6b8a76] disabled:opacity-40 transition-colors"
+          >
+            {saving ? '儲存中...' : '新增個案'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function HomePage() {
   const { cases, phoneVisits, homeVisits } = useStore()
   const [mounted, setMounted] = useState(false)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('active')
   const [visitFilter, setVisitFilter] = useState<VisitFilter>('all')
+  const [showNewCase, setShowNewCase] = useState(false)
   useEffect(() => { setMounted(true) }, [])
 
   const now = new Date()
@@ -73,7 +204,6 @@ export default function HomePage() {
   }), [activeCases, phoneVisits, thisYear, thisMonth])
 
   const noHomeInSixMonths = useMemo(() => activeCases.filter(c => {
-    // 優先用 Google Sheet 的最近家訪日
     if (c.lastHomeVisitDate) {
       const d = new Date(c.lastHomeVisitDate)
       if (!isNaN(d.getTime())) return d < sixMonthsAgo
@@ -110,12 +240,22 @@ export default function HomePage() {
 
   return (
     <div>
+      {showNewCase && <NewCaseModal onClose={() => setShowNewCase(false)} />}
+
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold text-gray-800">個案列表</h2>
-        <div className="flex gap-2 text-sm">
-          <span className="px-3 py-1 bg-[#dce8de] text-[#607a68] rounded-full font-medium">在案 {counts.active}</span>
-          <span className="px-3 py-1 bg-[#ede9d8] text-[#7a7048] rounded-full font-medium">暫停 {counts.suspended}</span>
-          <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full font-medium">結案 {counts.closed}</span>
+        <div className="flex items-center gap-3">
+          <div className="flex gap-2 text-sm">
+            <span className="px-3 py-1 bg-[#dce8de] text-[#607a68] rounded-full font-medium">在案 {counts.active}</span>
+            <span className="px-3 py-1 bg-[#ede9d8] text-[#7a7048] rounded-full font-medium">暫停 {counts.suspended}</span>
+            <span className="px-3 py-1 bg-gray-100 text-gray-500 rounded-full font-medium">結案 {counts.closed}</span>
+          </div>
+          <button
+            onClick={() => setShowNewCase(true)}
+            className="px-4 py-2 bg-[#7a9985] text-white rounded-xl text-sm font-medium hover:bg-[#6b8a76] transition-colors"
+          >
+            ＋ 新增個案
+          </button>
         </div>
       </div>
 
@@ -203,7 +343,7 @@ export default function HomePage() {
         <div className="text-center py-24 text-gray-400">
           <p className="text-5xl mb-4">☁️</p>
           <p className="text-lg font-medium mb-1">尚無個案資料</p>
-          <p className="text-sm">請點擊左側「同步個案」按鈕，從 Google Sheet 載入資料</p>
+          <p className="text-sm">點擊右上角「新增個案」手動新增，或按左側「同步個案」從 Google Sheet 載入</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
