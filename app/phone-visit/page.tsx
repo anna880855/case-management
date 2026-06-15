@@ -109,10 +109,11 @@ function PhoneVisitContent() {
     for (const cat of CATEGORIES) {
       const pool = sentences.filter(s => s.category === cat)
       if (cat === 'service' && caseObj?.services?.length) {
-        const relevant = pool.filter(s =>
-          caseObj.services.some(svc => s.text.includes(svc))
-        )
-        newPicked[cat] = pickRandom(relevant.length > 0 ? relevant : pool)
+        // prefer sentences whose serviceType matches a case service; fall back to general sentences (no serviceType)
+        const matched = pool.filter(s => s.serviceType && caseObj.services.some(svc => svc.includes(s.serviceType!) || s.serviceType!.includes(svc)))
+        const general = pool.filter(s => !s.serviceType)
+        const preferred = matched.length > 0 ? matched : general.length > 0 ? general : pool
+        newPicked[cat] = pickRandom(preferred)
       } else {
         newPicked[cat] = pickRandom(pool)
       }
@@ -148,11 +149,13 @@ function PhoneVisitContent() {
 
   const handleSelectCase = (id: string) => {
     const c = cases.find(x => x.id === id)
+    const prevVisits = getPhoneVisitsByCase(id)
+    const prevTarget = prevVisits.length > 0 ? prevVisits[0].target : ''
     setSelectedCaseId(id)
     setCaseSearch('')
     setGenerated('')
     setSaved(false)
-    setTarget(parseVisitTarget(c?.visitTarget || '') || c?.guardian || '')
+    setTarget(prevTarget || parseVisitTarget(c?.visitTarget || '') || c?.guardian || '')
     setGoalTracking({ short: { status: '', percent: '' }, mid: { status: '', percent: '' }, long: { status: '', percent: '' } })
     autoSelect(c)
   }
