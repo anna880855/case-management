@@ -7,12 +7,12 @@ export const DEFAULT_SENTENCES: Sentence[] = [
   { id: 's20', category: 'service', text: '確認個案正常使用長照服務，無異常反應，服務提供穩定。' },
   { id: 's21', category: 'service', text: '個案對目前服務表示滿意，服務內容符合需求，暫無調整需求。' },
   { id: 's22', category: 'service', text: '個案目前各項長照服務使用穩定，個案及家屬均表示滿意，暫無異動需求。' },
-  { id: 's23', category: 'service', text: '確認居家服務正常到宅，個案表示服務員態度親切，工作內容符合期待。' },
+  { id: 's23', category: 'service', serviceType: '居家服務', text: '確認居家服務正常到宅，個案表示服務員態度親切，工作內容符合期待。' },
   { id: 's24', category: 'service', text: '個案表示目前服務配置合適，頻率及內容均符合需求，暫不需調整。' },
   { id: 's25', category: 'service', text: '詢問服務使用情況，個案及家屬均表示滿意，無申訴或異動需求，服務持續穩定。' },
-  { id: 's26', category: 'service', text: '個案表示對服務人員服務品質滿意，服務時間配合良好，暫無變更需求。' },
-  { id: 's27', category: 'service', text: '確認個案日間照顧服務出席正常，個案表示喜歡參與活動，適應情形良好。' },
-  { id: 's28', category: 'service', text: '個案居家護理/治療服務正常進行，個案配合度良好，服務穩定無異動。' },
+  { id: 's26', category: 'service', serviceType: '居家服務', text: '個案表示對服務人員服務品質滿意，服務時間配合良好，暫無變更需求。' },
+  { id: 's27', category: 'service', serviceType: '日間照顧', text: '確認個案日間照顧服務出席正常，個案表示喜歡參與活動，適應情形良好。' },
+  { id: 's28', category: 'service', serviceType: '居家護理', text: '個案居家護理/治療服務正常進行，個案配合度良好，服務穩定無異動。' },
 
   // ── physical（身心狀況）──
   { id: 's01', category: 'physical', text: '詢問近期身體狀況，個案表示穩定，無特殊不適。' },
@@ -163,7 +163,7 @@ export const useStore = create<StoreState & StoreActions>()(
     }),
     {
       name: 'case-mgmt-v1',
-      version: 4,
+      version: 5,
       migrate: (persistedState: unknown, version: number) => {
         let state = persistedState as StoreState & StoreActions
         if (version < 2) {
@@ -183,6 +183,13 @@ export const useStore = create<StoreState & StoreActions>()(
           if (!s.phoneVisitSheetName) s.phoneVisitSheetName = '電訪紀錄'
           if (!s.homeVisitSheetName) s.homeVisitSheetName = '家訪紀錄'
           state = { ...state, settings: s as unknown as Settings }
+        }
+        if (version < 5) {
+          // refresh default service sentences to include serviceType tags
+          const existing: Sentence[] = state.sentences || []
+          const defaultIds = new Set(DEFAULT_SENTENCES.map((s) => s.id))
+          const custom = existing.filter((s) => !defaultIds.has(s.id) && !/^s\d+$/.test(s.id))
+          state = { ...state, sentences: [...DEFAULT_SENTENCES, ...custom] }
         }
         return state
       },

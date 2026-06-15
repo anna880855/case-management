@@ -402,6 +402,16 @@ function HomeVisitContent() {
     if (d.finalDoc !== undefined) setFinalDoc(d.finalDoc)
   }
 
+  // Pre-populate services from case's last saved home visit services
+  useEffect(() => {
+    if (!selectedCaseId) return
+    const c = cases.find(x => x.id === selectedCaseId)
+    if (c?.caseHomeServices && c.caseHomeServices.length > 0) {
+      setServices(c.caseHomeServices)
+      setServiceEnabled(true)
+    }
+  }, [selectedCaseId, cases])
+
   // Fetch drafts when case changes
   useEffect(() => {
     if (!selectedCaseId || !settings.appsScriptUrl) { setDrafts([]); return }
@@ -650,12 +660,17 @@ ${problemSection}
       planContent: finalDoc,
       createdAt: new Date().toISOString(),
     })
+    const caseUpdate: Parameters<typeof updateCase>[1] = {}
     if (careGoals.short || careGoals.mid || careGoals.long) {
-      updateCase(selectedCase.id, {
-        shortGoal: careGoals.short,
-        midGoal: careGoals.mid,
-        longGoal: careGoals.long,
-      })
+      caseUpdate.shortGoal = careGoals.short
+      caseUpdate.midGoal = careGoals.mid
+      caseUpdate.longGoal = careGoals.long
+    }
+    if (services.length > 0) {
+      caseUpdate.caseHomeServices = services
+    }
+    if (Object.keys(caseUpdate).length > 0) {
+      updateCase(selectedCase.id, caseUpdate)
     }
     setSaved(true)
     if (settings.appsScriptUrl) {

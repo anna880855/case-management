@@ -17,6 +17,7 @@ export interface Case {
   notes2?: string
   services: string[]
   visitTarget?: string
+  caseHomeServices?: { id: string; category: string; code: string; name: string; units: string }[]
   lastHomeVisitDate?: string
   homeVisitIntervalMonths?: string
   shortGoal?: string
@@ -47,6 +48,7 @@ export interface HomeVisitRecord {
 export interface Sentence {
   id: string
   category: string
+  serviceType?: string
   text: string
 }
 
