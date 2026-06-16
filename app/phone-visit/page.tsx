@@ -89,15 +89,6 @@ function PhoneVisitContent() {
   const [caseSearch, setCaseSearch] = useState('')
   const [picked, setPicked] = useState<Record<string, string>>({})
 
-  type GoalKey = 'short' | 'mid' | 'long'
-  const GOAL_STATUSES = ['已完成', '完成＿%', '尚未完成', '持續追蹤', '無法完成'] as const
-  const [goalTracking, setGoalTracking] = useState<Record<GoalKey, { status: string; percent: string }>>({
-    short: { status: '', percent: '' },
-    mid: { status: '', percent: '' },
-    long: { status: '', percent: '' },
-  })
-  const goalLabels: Record<GoalKey, string> = { short: '短期目標', mid: '中期目標', long: '長期目標' }
-
   const pickRandom = (pool: Sentence[], exclude?: string) => {
     const others = exclude ? pool.filter(s => s.text !== exclude) : pool
     const arr = others.length > 0 ? others : pool
@@ -156,29 +147,12 @@ function PhoneVisitContent() {
     setGenerated('')
     setSaved(false)
     setTarget(prevTarget || parseVisitTarget(c?.visitTarget || '') || c?.guardian || '')
-    setGoalTracking({ short: { status: '', percent: '' }, mid: { status: '', percent: '' }, long: { status: '', percent: '' } })
     autoSelect(c)
   }
 
   const pickedSentences = CATEGORIES
     .filter(cat => picked[cat])
     .map(cat => ({ category: CATEGORY_LABELS[cat], text: picked[cat] }))
-
-  const buildGoalBlock = () => {
-    if (!selectedCase) return ''
-    const goals: { key: GoalKey; text: string }[] = [
-      { key: 'short' as GoalKey, text: selectedCase.shortGoal || '' },
-      { key: 'mid' as GoalKey, text: selectedCase.midGoal || '' },
-      { key: 'long' as GoalKey, text: selectedCase.longGoal || '' },
-    ].filter(g => g.text)
-    if (goals.length === 0) return ''
-    const lines = goals.map(g => {
-      const t = goalTracking[g.key]
-      const statusText = t.status === '完成＿%' ? `完成${t.percent || '?'}%` : t.status
-      return `${goalLabels[g.key]}：${g.text}\n　→ ${statusText || '（未填）'}`
-    })
-    return `六、復能目標追蹤進度：\n${lines.join('\n')}`
-  }
 
   const handleQuickCombine = () => {
     if (!selectedCase) { setError('請選擇個案'); return }
@@ -189,7 +163,6 @@ function PhoneVisitContent() {
     const day = d.getDate()
     const visitTarget = target || selectedCase.guardian || selectedCase.name
     const content = pickedSentences.map(s => s.text).join(pickedSentences.length > 1 ? '　' : '')
-    const goalBlock = buildGoalBlock()
     const result = `一、電訪日期：民國${year}年${month}月${day}日 ${time}
 二、電訪對象：${visitTarget}
 三、訪談內容：
@@ -198,7 +171,7 @@ ${content}${customNote ? `　${customNote}` : ''}
 二、交通接送服務：暫無新增照會。
 三、輔具及居家無障礙環境改善：無新增需求。
 四、喘息服務：與案家屬確認暫無需求。
-五、轉介其他資源：無轉介。${goalBlock ? `\n${goalBlock}` : ''}`
+五、轉介其他資源：無轉介。`
     setGenerated(result)
     setSaved(false)
     setError('')
@@ -223,8 +196,7 @@ ${content}${customNote ? `　${customNote}` : ''}
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      const goalBlock = buildGoalBlock()
-      setGenerated(data.content + (goalBlock ? `\n${goalBlock}` : ''))
+      setGenerated(data.content)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : '產生失敗，請再試一次')
     } finally {
@@ -420,50 +392,6 @@ ${content}${customNote ? `　${customNote}` : ''}
           </div>
 
           {/* 目標追蹤 */}
-          {selectedCase && (selectedCase.shortGoal || selectedCase.midGoal || selectedCase.longGoal) && (
-            <div className="bg-white rounded-xl border border-gray-100 p-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">目標追蹤進度</h3>
-              <div className="space-y-3">
-                {(['short', 'mid', 'long'] as GoalKey[]).map(key => {
-                  const goalText = key === 'short' ? selectedCase.shortGoal : key === 'mid' ? selectedCase.midGoal : selectedCase.longGoal
-                  if (!goalText) return null
-                  const tracking = goalTracking[key]
-                  return (
-                    <div key={key} className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-xs font-semibold text-[#7a9985] mb-1">{goalLabels[key]}</p>
-                      <p className="text-sm text-gray-700 mb-2">{goalText}</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {GOAL_STATUSES.map(s => (
-                          <button
-                            key={s}
-                            onClick={() => setGoalTracking(p => ({ ...p, [key]: { ...p[key], status: s } }))}
-                            className={`px-2.5 py-1 text-xs rounded-lg border transition-colors ${
-                              tracking.status === s
-                                ? 'bg-[#7a9985] text-white border-[#7a9985]'
-                                : 'bg-white text-gray-600 border-gray-200 hover:border-[#a3bcaa]'
-                            }`}
-                          >
-                            {s}
-                          </button>
-                        ))}
-                        {tracking.status === '完成＿%' && (
-                          <input
-                            type="number"
-                            min={0} max={100}
-                            value={tracking.percent}
-                            onChange={e => setGoalTracking(p => ({ ...p, [key]: { ...p[key], percent: e.target.value } }))}
-                            placeholder="百分比"
-                            className="w-20 px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]"
-                          />
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
           {/* 補充說明 */}
           <div className="bg-white rounded-xl border border-gray-100 p-4">
             <label className="block text-sm font-semibold text-gray-700 mb-2">

@@ -62,6 +62,7 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
       midGoal: c.midGoal || '',
       longGoal: c.longGoal || '',
       responsibleWorker: c.responsibleWorker || '',
+      services: c.services || [],
     })
     setEditing(true)
   }
@@ -213,6 +214,31 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
               <EditField label="短期目標" value={ef.shortGoal || ''} onChange={v => setEditFields(p => ({ ...p, shortGoal: v }))} />
               <EditField label="中期目標" value={ef.midGoal || ''} onChange={v => setEditFields(p => ({ ...p, midGoal: v }))} />
               <EditField label="長期目標" value={ef.longGoal || ''} onChange={v => setEditFields(p => ({ ...p, longGoal: v }))} />
+            </div>
+          </div>
+          <div className="mt-4 space-y-2">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">服務項目（長照服務大項目，供電訪句型篩選使用）</p>
+            <div className="flex flex-wrap gap-2">
+              {['居家照顧', '日間照顧', '交通車服務', '喘息服務'].map(svc => {
+                const checked = (ef.services || []).includes(svc)
+                return (
+                  <button
+                    key={svc}
+                    type="button"
+                    onClick={() => setEditFields(p => {
+                      const cur = p.services || []
+                      return { ...p, services: checked ? cur.filter(s => s !== svc) : [...cur, svc] }
+                    })}
+                    className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+                      checked
+                        ? 'bg-[#7a9985] text-white border-[#7a9985]'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-[#a3bcaa]'
+                    }`}
+                  >
+                    {svc}
+                  </button>
+                )
+              })}
             </div>
           </div>
           <div className="mt-4 space-y-3">

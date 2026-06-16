@@ -3,16 +3,20 @@ import { persist } from 'zustand/middleware'
 import type { Case, PhoneVisitRecord, HomeVisitRecord, Sentence, Settings } from './types'
 
 export const DEFAULT_SENTENCES: Sentence[] = [
-  // ── service（服務使用）──
+  // ── service（服務使用，依長照服務大項目分類：居家照顧／日間照顧／交通車服務／喘息服務）──
   { id: 's20', category: 'service', text: '確認個案正常使用長照服務，無異常反應，服務提供穩定。' },
   { id: 's21', category: 'service', text: '個案對目前服務表示滿意，服務內容符合需求，暫無調整需求。' },
   { id: 's22', category: 'service', text: '個案目前各項長照服務使用穩定，個案及家屬均表示滿意，暫無異動需求。' },
-  { id: 's23', category: 'service', serviceType: '居家服務', text: '確認居家服務正常到宅，個案表示服務員態度親切，工作內容符合期待。' },
+  { id: 's23', category: 'service', serviceType: '居家照顧', text: '確認居家照顧服務正常到宅，個案表示服務員態度親切，工作內容符合期待。' },
   { id: 's24', category: 'service', text: '個案表示目前服務配置合適，頻率及內容均符合需求，暫不需調整。' },
   { id: 's25', category: 'service', text: '詢問服務使用情況，個案及家屬均表示滿意，無申訴或異動需求，服務持續穩定。' },
-  { id: 's26', category: 'service', serviceType: '居家服務', text: '個案表示對服務人員服務品質滿意，服務時間配合良好，暫無變更需求。' },
+  { id: 's26', category: 'service', serviceType: '居家照顧', text: '個案表示對居家照顧服務人員服務品質滿意，服務時間配合良好，暫無變更需求。' },
   { id: 's27', category: 'service', serviceType: '日間照顧', text: '確認個案日間照顧服務出席正常，個案表示喜歡參與活動，適應情形良好。' },
-  { id: 's28', category: 'service', serviceType: '居家護理', text: '個案居家護理/治療服務正常進行，個案配合度良好，服務穩定無異動。' },
+  { id: 's53', category: 'service', serviceType: '日間照顧', text: '個案日間照顧接送及活動參與情形穩定，與其他長輩互動良好，家屬反映白天照顧負擔減輕。' },
+  { id: 's54', category: 'service', serviceType: '交通車服務', text: '確認交通車接送服務準時到位，個案表示司機及隨車人員協助良好，往返就醫或日照行程順利。' },
+  { id: 's55', category: 'service', serviceType: '交通車服務', text: '個案使用長照交通接送服務狀況穩定，未有延誤或異常情形，家屬表示安心。' },
+  { id: 's56', category: 'service', serviceType: '喘息服務', text: '個案家屬使用喘息服務期間反映良好，照顧者得以適度休息，服務內容符合需求。' },
+  { id: 's57', category: 'service', serviceType: '喘息服務', text: '確認喘息服務使用情形，家屬表示安排合適，暫無增加場次之需求。' },
 
   // ── physical（身心狀況）──
   { id: 's01', category: 'physical', text: '詢問近期身體狀況，個案表示穩定，無特殊不適。' },
@@ -163,7 +167,7 @@ export const useStore = create<StoreState & StoreActions>()(
     }),
     {
       name: 'case-mgmt-v1',
-      version: 5,
+      version: 6,
       migrate: (persistedState: unknown, version: number) => {
         let state = persistedState as StoreState & StoreActions
         if (version < 2) {
@@ -184,8 +188,9 @@ export const useStore = create<StoreState & StoreActions>()(
           if (!s.homeVisitSheetName) s.homeVisitSheetName = '家訪紀錄'
           state = { ...state, settings: s as unknown as Settings }
         }
-        if (version < 5) {
-          // refresh default service sentences to include serviceType tags
+        if (version < 6) {
+          // refresh default service sentences: serviceType now follows 長照服務大項目
+          // （居家照顧／日間照顧／交通車服務／喘息服務），舊版 s28（居家護理）一併移除
           const existing: Sentence[] = state.sentences || []
           const defaultIds = new Set(DEFAULT_SENTENCES.map((s) => s.id))
           const custom = existing.filter((s) => !defaultIds.has(s.id) && !/^s\d+$/.test(s.id))
