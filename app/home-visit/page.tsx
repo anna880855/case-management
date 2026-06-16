@@ -273,7 +273,7 @@ function HomeVisitContent() {
   const [respiteEndMonth, setRespiteEndMonth] = useState('')
   const [respiteAsOfMonth, setRespiteAsOfMonth] = useState('')
   const [respiteRemaining, setRespiteRemaining] = useState('')
-  const [respiteItems, setRespiteItems] = useState<{ id: string; code: string; name: string; units: string }[]>([])
+  const [respiteItems, setRespiteItems] = useState<{ id: string; prefix: string; code: string; name: string; units: string }[]>([])
   const [referral, setReferral] = useState('暫無')
 
   // ── Generated / saved
@@ -396,7 +396,7 @@ function HomeVisitContent() {
     if (d.respiteEndMonth !== undefined) setRespiteEndMonth(d.respiteEndMonth)
     if (d.respiteAsOfMonth !== undefined) setRespiteAsOfMonth(d.respiteAsOfMonth)
     if (d.respiteRemaining !== undefined) setRespiteRemaining(d.respiteRemaining)
-    if (d.respiteItems) setRespiteItems(d.respiteItems)
+    if (d.respiteItems) setRespiteItems(d.respiteItems.map((i: { id: string; prefix?: string; code: string; name: string; units: string }) => ({ ...i, prefix: i.prefix || 'GA' })))
     if (d.serviceEnabled !== undefined) setServiceEnabled(d.serviceEnabled)
     if (d.referral !== undefined) setReferral(d.referral)
     if (d.finalDoc !== undefined) setFinalDoc(d.finalDoc)
@@ -621,7 +621,7 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n')}
         ? `${transportation}，至${transportHospital || '醫療院所'}`
         : '暫無需求'
       const respiteText = respiteEnabled && respiteItems.length > 0
-        ? `本案喘息額度自${respiteStartYear}年${respiteStartMonth}月至${respiteEndYear}年${respiteEndMonth}月，截至${respiteAsOfMonth}月尚餘${respiteRemaining}元。${respiteItems.map(i => `GA${i.code}[${i.name}]*${i.units}單位/年`).join('；')}`
+        ? `本案喘息額度自${respiteStartYear}年${respiteStartMonth}月至${respiteEndYear}年${respiteEndMonth}月，截至${respiteAsOfMonth}月尚餘${respiteRemaining}元。${respiteItems.map(i => `${i.prefix || 'GA'}${i.code}[${i.name}]*${i.units}單位/年`).join('；')}`
         : '暫無需求'
 
       const problemSection = problemExplanations
@@ -1660,7 +1660,10 @@ ${problemSection}
                         <div className="space-y-1.5 mb-2">
                           {respiteItems.map(item => (
                             <div key={item.id} className="flex items-center gap-1 flex-wrap">
-                              <span className="text-sm text-gray-500">GA</span>
+                              <select value={item.prefix || 'GA'} onChange={e => setRespiteItems(prev => prev.map(i => i.id === item.id ? { ...i, prefix: e.target.value } : i))} className="px-1.5 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]">
+                                <option value="GA">GA</option>
+                                <option value="SC">SC</option>
+                              </select>
                               <input type="text" value={item.code} onChange={e => setRespiteItems(prev => prev.map(i => i.id === item.id ? { ...i, code: e.target.value } : i))} placeholder="代碼" className="w-14 px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]" />
                               <span className="text-sm text-gray-500">[</span>
                               <input type="text" value={item.name} onChange={e => setRespiteItems(prev => prev.map(i => i.id === item.id ? { ...i, name: e.target.value } : i))} placeholder="項目名稱" className="flex-1 min-w-[100px] px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]" />
@@ -1672,7 +1675,7 @@ ${problemSection}
                           ))}
                         </div>
                         <button
-                          onClick={() => setRespiteItems(prev => [...prev, { id: Date.now().toString(), code: '', name: '', units: '' }])}
+                          onClick={() => setRespiteItems(prev => [...prev, { id: Date.now().toString(), prefix: 'GA', code: '', name: '', units: '' }])}
                           className="px-2.5 py-1 text-xs border border-[#a3bcaa] text-[#7a9985] rounded hover:bg-[#e6ede7] transition-colors"
                         >
                           + 新增項目
