@@ -669,6 +669,15 @@ ${problemSection}
     if (services.length > 0) {
       caseUpdate.caseHomeServices = services
     }
+    // 依本次家訪實際填寫內容，推算個案使用的長照服務大項目（居家照顧／日間照顧／交通車服務／喘息服務）
+    const derivedServices = new Set(selectedCase.services || [])
+    if (services.some(s => s.category === 'BA')) derivedServices.add('居家照顧')
+    if (services.some(s => s.category === 'BB')) derivedServices.add('日間照顧')
+    if (transportEnabled) derivedServices.add('交通車服務')
+    if (respiteEnabled) derivedServices.add('喘息服務')
+    if (derivedServices.size > 0) {
+      caseUpdate.services = Array.from(derivedServices)
+    }
     if (Object.keys(caseUpdate).length > 0) {
       updateCase(selectedCase.id, caseUpdate)
     }
