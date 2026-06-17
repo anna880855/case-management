@@ -232,7 +232,7 @@ function PhoneVisitContent() {
       const statusText = t.status === '完成＿%' ? `完成${t.percent || '?'}%` : t.status
       return `${goalLabels[g.key]}：${g.text}\n　→ ${statusText || '（未填）'}`
     })
-    return `復能目標追蹤進度：\n${lines.join('\n')}`
+    return lines.join('\n')
   }
 
   const handleQuickCombine = () => {
@@ -245,16 +245,18 @@ function PhoneVisitContent() {
     const visitTarget = target || selectedCase.guardian || selectedCase.name
     const content = pickedSentences.map(s => s.text).join(pickedSentences.length > 1 ? '　' : '')
     const goalBlock = buildGoalBlock()
-    const result = `一、電訪日期：民國${year}年${month}月${day}日 ${time}
-二、電訪對象：${visitTarget}
-三、訪談內容：
-${content}${customNote ? `　${customNote}` : ''}
-${goalBlock ? `\n${goalBlock}\n` : ''}
-${PLAN_LABELS.care}：${planBlock.care}
+    const parts = [
+      `一、電訪日期：民國${year}年${month}月${day}日 ${time}`,
+      `二、電訪對象：${visitTarget}`,
+      `三、訪談內容：\n${content}${customNote ? `　${customNote}` : ''}`,
+    ]
+    if (goalBlock) parts.push('', '', goalBlock)
+    parts.push('', `${PLAN_LABELS.care}：${planBlock.care}
 ${PLAN_LABELS.transport}：${planBlock.transport}
 ${PLAN_LABELS.aids}：${planBlock.aids}
 ${PLAN_LABELS.respite}：${planBlock.respite}
-${PLAN_LABELS.referral}：${planBlock.referral}`
+${PLAN_LABELS.referral}：${planBlock.referral}`)
+    const result = parts.join('\n')
     setGenerated(result)
     setSaved(false)
     setError('')
@@ -283,8 +285,8 @@ ${PLAN_LABELS.referral}：${planBlock.referral}`
       const marker = PLAN_LABELS.care
       const markerIndex = data.content.indexOf(marker)
       const finalContent = goalBlock && markerIndex !== -1
-        ? `${data.content.slice(0, markerIndex)}${goalBlock}\n\n${data.content.slice(markerIndex)}`
-        : data.content + (goalBlock ? `\n${goalBlock}` : '')
+        ? `${data.content.slice(0, markerIndex).trimEnd()}\n\n\n${goalBlock}\n\n${data.content.slice(markerIndex)}`
+        : data.content + (goalBlock ? `\n\n\n${goalBlock}` : '')
       setGenerated(finalContent)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : '產生失敗，請再試一次')
