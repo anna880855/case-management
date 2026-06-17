@@ -75,7 +75,7 @@ function Field({ label, field, value, onChange, placeholder = '', type = 'text' 
 }
 
 function NewCaseModal({ onClose }: { onClose: () => void }) {
-  const { addCase } = useStore()
+  const { addCase, settings } = useStore()
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
 
@@ -104,6 +104,19 @@ function NewCaseModal({ onClose }: { onClose: () => void }) {
       services: [],
     }
     addCase(newCase)
+    if (settings.appsScriptUrl) {
+      try {
+        await fetch('/api/update-case', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            appsScriptUrl: settings.appsScriptUrl,
+            action: 'createCase',
+            fields: newCase,
+          }),
+        })
+      } catch {}
+    }
     setSaving(false)
     onClose()
   }

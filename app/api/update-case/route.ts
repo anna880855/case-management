@@ -11,7 +11,10 @@ export async function POST(req: NextRequest) {
   try {
     let url: string
 
-    if (action === 'updateCase') {
+    if (action === 'createCase') {
+      const { fields } = body
+      url = `${appsScriptUrl}?action=createCase&fields=${encodeURIComponent(JSON.stringify(fields))}`
+    } else if (action === 'updateCase') {
       const { caseName, caseNumber, fields } = body
       url = `${appsScriptUrl}?action=updateCase&caseName=${encodeURIComponent(caseName)}&caseNumber=${encodeURIComponent(caseNumber || '')}&fields=${encodeURIComponent(JSON.stringify(fields))}`
     } else if (action === 'updateStatus') {
