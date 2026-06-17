@@ -37,6 +37,10 @@ function useVisitStatus(caseId: string) {
     if (v.caseId !== caseId) return false
     const d = new Date(v.date)
     return d.getFullYear() === thisYear && d.getMonth() === thisMonth
+  }) || homeVisits.some(v => {
+    if (v.caseId !== caseId) return false
+    const d = new Date(v.date)
+    return d.getFullYear() === thisYear && d.getMonth() === thisMonth
   })
 
   const hasHomeInSixMonths = homeVisits.some(v => {
@@ -196,12 +200,13 @@ export default function HomePage() {
   const activeCases = useMemo(() => cases.filter(c => c.status === 'active'), [cases])
 
   const noPhoneThisMonth = useMemo(() => activeCases.filter(c => {
-    return !phoneVisits.some(v => {
+    const visitedThisMonth = (v: { caseId: string; date: string }) => {
       if (v.caseId !== c.id) return false
       const d = new Date(v.date)
       return d.getFullYear() === thisYear && d.getMonth() === thisMonth
-    })
-  }), [activeCases, phoneVisits, thisYear, thisMonth])
+    }
+    return !phoneVisits.some(visitedThisMonth) && !homeVisits.some(visitedThisMonth)
+  }), [activeCases, phoneVisits, homeVisits, thisYear, thisMonth])
 
   const noHomeInSixMonths = useMemo(() => activeCases.filter(c => {
     if (c.lastHomeVisitDate) {
