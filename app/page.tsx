@@ -201,6 +201,10 @@ function NewCaseModal({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
+        <div className="px-6 pb-3 text-xs text-gray-400">
+          除錯資訊：appsScriptUrl = {settings.appsScriptUrl ? `"${settings.appsScriptUrl}"` : '（空白）'}
+        </div>
+
         <div className="flex gap-3 px-6 pb-5">
           <button
             onClick={onClose}
