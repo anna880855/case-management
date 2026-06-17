@@ -19,7 +19,8 @@ function buildPrompt(
   customNote: string,
   target: string,
   date: string,
-  managerName: string
+  managerName: string,
+  planBlock: Record<PlanKey, string>
 ): string {
   const sentenceBlock = pickedSentences.map(s => `【${s.category}】${s.text}`).join('\n')
   return `你是一位專業的個案管理師（${managerName}），請根據以下資訊產生一份正式的電訪紀錄，使用繁體中文，語氣專業具體，150-250字。
@@ -38,18 +39,18 @@ function buildPrompt(
 ${sentenceBlock}
 ${customNote ? `\n補充說明（請一併融入）：${customNote}` : ''}
 
-請依照以下固定格式輸出（直接輸出，不要加任何說明文字）：
+請依照以下固定格式輸出（直接輸出，不要加任何說明文字，「三、訪談內容」之後的五項請直接照抄下方內容，不要自行改寫或新增）：
 
 一、電訪日期：${date}
 二、電訪對象：${target || c.guardian || c.name}
 三、訪談內容：
 （150-250字流暢段落）
 
-一、照顧及專業服務：（根據情況填寫，如無異動則寫「服務穩定無須異動。」）
-二、交通接送服務：（如無新增則寫「暫無新增照會。」）
-三、輔具及居家無障礙環境改善：（如無需求則寫「無新增需求。」）
-四、喘息服務：（如無需求則寫「與案家屬確認暫無需求。」）
-五、轉介其他資源：（如無則寫「無轉介。」）`
+${PLAN_LABELS.care}：${planBlock.care}
+${PLAN_LABELS.transport}：${planBlock.transport}
+${PLAN_LABELS.aids}：${planBlock.aids}
+${PLAN_LABELS.respite}：${planBlock.respite}
+${PLAN_LABELS.referral}：${planBlock.referral}`
 }
 
 function parseVisitTarget(raw: string): string {
@@ -66,6 +67,39 @@ function parseVisitTarget(raw: string): string {
     }
   } catch {}
   return raw
+}
+
+const PLAN_KEYS = ['care', 'transport', 'aids', 'respite', 'referral'] as const
+type PlanKey = typeof PLAN_KEYS[number]
+const PLAN_LABELS: Record<PlanKey, string> = {
+  care: '一、照顧及專業服務',
+  transport: '二、交通接送服務',
+  aids: '三、輔具及居家無障礙環境改善',
+  respite: '四、喘息服務',
+  referral: '五、轉介其他資源',
+}
+const PLAN_DEFAULTS: Record<PlanKey, string> = {
+  care: '服務穩定無須異動。',
+  transport: '暫無新增照會。',
+  aids: '無新增需求。',
+  respite: '與案家屬確認暫無需求。',
+  referral: '無轉介。',
+}
+const PLAN_PATTERNS: Record<PlanKey, RegExp> = {
+  care: /一、照顧及專業服務：([^\n]*)/,
+  transport: /二、交通接送服務：([^\n]*)/,
+  aids: /三、輔具及居家無障礙環境改善：([^\n]*)/,
+  respite: /四、喘息服務：([^\n]*)/,
+  referral: /五、轉介其他資源：([^\n]*)/,
+}
+
+function parsePlanBlock(content: string): Record<PlanKey, string> {
+  const result = {} as Record<PlanKey, string>
+  for (const key of PLAN_KEYS) {
+    const m = content.match(PLAN_PATTERNS[key])
+    result[key] = m && m[1].trim() ? m[1].trim() : PLAN_DEFAULTS[key]
+  }
+  return result
 }
 
 function PhoneVisitContent() {
@@ -88,6 +122,7 @@ function PhoneVisitContent() {
   const [saved, setSaved] = useState(false)
   const [caseSearch, setCaseSearch] = useState('')
   const [picked, setPicked] = useState<Record<string, string>>({})
+  const [planBlock, setPlanBlock] = useState<Record<PlanKey, string>>({ ...PLAN_DEFAULTS })
 
   const pickRandom = (pool: Sentence[], exclude?: string) => {
     const others = exclude ? pool.filter(s => s.text !== exclude) : pool
@@ -147,7 +182,14 @@ function PhoneVisitContent() {
     setGenerated('')
     setSaved(false)
     setTarget(prevTarget || parseVisitTarget(c?.visitTarget || '') || c?.guardian || '')
+    setPlanBlock(prevVisits.length > 0 ? parsePlanBlock(prevVisits[0].content) : { ...PLAN_DEFAULTS })
     autoSelect(c)
+  }
+
+  const applyPrevPlanBlock = () => {
+    if (!selectedCaseId) return
+    const prevVisits = getPhoneVisitsByCase(selectedCaseId)
+    if (prevVisits.length > 0) setPlanBlock(parsePlanBlock(prevVisits[0].content))
   }
 
   const pickedSentences = CATEGORIES
@@ -167,11 +209,11 @@ function PhoneVisitContent() {
 二、電訪對象：${visitTarget}
 三、訪談內容：
 ${content}${customNote ? `　${customNote}` : ''}
-一、照顧及專業服務：服務穩定無須異動。
-二、交通接送服務：暫無新增照會。
-三、輔具及居家無障礙環境改善：無新增需求。
-四、喘息服務：與案家屬確認暫無需求。
-五、轉介其他資源：無轉介。`
+${PLAN_LABELS.care}：${planBlock.care}
+${PLAN_LABELS.transport}：${planBlock.transport}
+${PLAN_LABELS.aids}：${planBlock.aids}
+${PLAN_LABELS.respite}：${planBlock.respite}
+${PLAN_LABELS.referral}：${planBlock.referral}`
     setGenerated(result)
     setSaved(false)
     setError('')
@@ -190,7 +232,7 @@ ${content}${customNote ? `　${customNote}` : ''}
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: buildPrompt(selectedCase, pickedSentences, customNote, target, `${date} ${time}`, settings.managerName),
+          prompt: buildPrompt(selectedCase, pickedSentences, customNote, target, `${date} ${time}`, settings.managerName, planBlock),
           apiKey: settings.claudeApiKey,
         }),
       })
@@ -391,7 +433,35 @@ ${content}${customNote ? `　${customNote}` : ''}
             )}
           </div>
 
-          {/* 目標追蹤 */}
+          {/* 服務計劃內容追蹤 */}
+          <div className="bg-white rounded-xl border border-gray-100 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-semibold text-gray-700">
+                服務計劃內容追蹤
+                <span className="font-normal text-gray-400 ml-1">（可套用上次電訪內容並修改）</span>
+              </label>
+              <button
+                onClick={applyPrevPlanBlock}
+                disabled={!selectedCaseId || getPhoneVisitsByCase(selectedCaseId).length === 0}
+                className="text-xs text-gray-400 hover:text-[#7a9985] border border-gray-200 hover:border-[#a3bcaa] rounded px-2 py-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                套用上次內容
+              </button>
+            </div>
+            <div className="space-y-2">
+              {PLAN_KEYS.map(key => (
+                <div key={key}>
+                  <label className="block text-xs text-gray-500 mb-1">{PLAN_LABELS[key]}</label>
+                  <input
+                    value={planBlock[key]}
+                    onChange={e => setPlanBlock(p => ({ ...p, [key]: e.target.value }))}
+                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* 補充說明 */}
           <div className="bg-white rounded-xl border border-gray-100 p-4">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
