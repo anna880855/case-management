@@ -102,6 +102,32 @@ function parsePlanBlock(content: string): Record<PlanKey, string> {
   return result
 }
 
+type GoalKey = 'short' | 'mid' | 'long'
+const GOAL_STATUSES = ['已完成', '完成＿%', '尚未完成', '持續追蹤', '無法完成'] as const
+const GOAL_LABELS: Record<GoalKey, string> = { short: '短期目標', mid: '中期目標', long: '長期目標' }
+const EMPTY_GOAL_TRACKING: Record<GoalKey, { status: string; percent: string }> = {
+  short: { status: '', percent: '' },
+  mid: { status: '', percent: '' },
+  long: { status: '', percent: '' },
+}
+
+function parseGoalBlock(content: string): Record<GoalKey, { status: string; percent: string }> {
+  const result = { ...EMPTY_GOAL_TRACKING }
+  for (const key of (['short', 'mid', 'long'] as GoalKey[])) {
+    const re = new RegExp(`${GOAL_LABELS[key]}：[^\\n]*\\n\\s*→\\s*([^\\n]*)`)
+    const m = content.match(re)
+    if (!m) continue
+    const statusText = m[1].trim()
+    const percentMatch = statusText.match(/^完成(\d+)%$/)
+    if (percentMatch) {
+      result[key] = { status: '完成＿%', percent: percentMatch[1] }
+    } else if ((GOAL_STATUSES as readonly string[]).includes(statusText)) {
+      result[key] = { status: statusText, percent: '' }
+    }
+  }
+  return result
+}
+
 function PhoneVisitContent() {
   const searchParams = useSearchParams()
   const { cases, sentences, settings, addPhoneVisit, getPhoneVisitsByCase } = useStore()
@@ -124,14 +150,8 @@ function PhoneVisitContent() {
   const [picked, setPicked] = useState<Record<string, string>>({})
   const [planBlock, setPlanBlock] = useState<Record<PlanKey, string>>({ ...PLAN_DEFAULTS })
 
-  type GoalKey = 'short' | 'mid' | 'long'
-  const GOAL_STATUSES = ['已完成', '完成＿%', '尚未完成', '持續追蹤', '無法完成'] as const
-  const [goalTracking, setGoalTracking] = useState<Record<GoalKey, { status: string; percent: string }>>({
-    short: { status: '', percent: '' },
-    mid: { status: '', percent: '' },
-    long: { status: '', percent: '' },
-  })
-  const goalLabels: Record<GoalKey, string> = { short: '短期目標', mid: '中期目標', long: '長期目標' }
+  const [goalTracking, setGoalTracking] = useState<Record<GoalKey, { status: string; percent: string }>>({ ...EMPTY_GOAL_TRACKING })
+  const goalLabels = GOAL_LABELS
 
   const pickRandom = (pool: Sentence[], exclude?: string) => {
     const others = exclude ? pool.filter(s => s.text !== exclude) : pool
@@ -205,7 +225,7 @@ function PhoneVisitContent() {
     setSaved(false)
     setTarget(prevTarget || parseVisitTarget(c?.visitTarget || '') || c?.guardian || '')
     setPlanBlock(prevVisits.length > 0 ? parsePlanBlock(prevVisits[0].content) : { ...PLAN_DEFAULTS })
-    setGoalTracking({ short: { status: '', percent: '' }, mid: { status: '', percent: '' }, long: { status: '', percent: '' } })
+    setGoalTracking(prevVisits.length > 0 ? parseGoalBlock(prevVisits[0].content) : { ...EMPTY_GOAL_TRACKING })
     autoSelect(c)
   }
 
