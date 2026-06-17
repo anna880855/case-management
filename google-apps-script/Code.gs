@@ -19,6 +19,8 @@ const FIELD_MAP = {
   '姓名': 'name', '個案姓名': 'name', '案主姓名': 'name', '姓　名': 'name',
   // 個案編號
   '個案編號': 'caseNumber', '編號': 'caseNumber', '案號': 'caseNumber', '個案號碼': 'caseNumber',
+  // 性別
+  '性別': 'gender',
   // 電話
   '電話': 'phone', '聯絡電話': 'phone', '手機': 'phone', '行動電話': 'phone',
   '電話號碼': 'phone', '個案電話': 'phone', '個案手機': 'phone', '聯絡手機': 'phone',
