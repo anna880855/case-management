@@ -59,6 +59,21 @@ const EMPTY_FORM = {
   status: 'active' as Case['status'],
 }
 
+function Field({ label, field, value, onChange, placeholder = '', type = 'text' }: { label: string; field: string; value: string; onChange: (field: string, value: string) => void; placeholder?: string; type?: string }) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(field, e.target.value)}
+        placeholder={placeholder}
+        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
+      />
+    </div>
+  )
+}
+
 function NewCaseModal({ onClose }: { onClose: () => void }) {
   const { addCase } = useStore()
   const [form, setForm] = useState(EMPTY_FORM)
@@ -93,19 +108,6 @@ function NewCaseModal({ onClose }: { onClose: () => void }) {
     onClose()
   }
 
-  const Field = ({ label, field, placeholder = '', type = 'text' }: { label: string; field: string; placeholder?: string; type?: string }) => (
-    <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
-      <input
-        type={type}
-        value={(form as Record<string, string>)[field]}
-        onChange={e => set(field, e.target.value)}
-        placeholder={placeholder}
-        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
-      />
-    </div>
-  )
-
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -127,7 +129,7 @@ function NewCaseModal({ onClose }: { onClose: () => void }) {
                 autoFocus
               />
             </div>
-            <Field label="個案編號" field="caseNumber" placeholder="選填" />
+            <Field label="個案編號" field="caseNumber" value={form.caseNumber} onChange={set} placeholder="選填" />
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">狀態</label>
               <select
@@ -140,15 +142,15 @@ function NewCaseModal({ onClose }: { onClose: () => void }) {
                 <option value="closed">結案</option>
               </select>
             </div>
-            <Field label="電話" field="phone" placeholder="選填" />
-            <Field label="生日" field="birthDate" type="date" />
+            <Field label="電話" field="phone" value={form.phone} onChange={set} placeholder="選填" />
+            <Field label="生日" field="birthDate" value={form.birthDate} onChange={set} type="date" />
             <div className="col-span-2">
-              <Field label="地址" field="address" placeholder="選填" />
+              <Field label="地址" field="address" value={form.address} onChange={set} placeholder="選填" />
             </div>
-            <Field label="照顧等級" field="careLevel" placeholder="例：第三級" />
-            <Field label="身心障礙" field="disability" placeholder="選填" />
-            <Field label="主要照顧者" field="guardian" placeholder="選填" />
-            <Field label="照顧者電話" field="guardianPhone" placeholder="選填" />
+            <Field label="照顧等級" field="careLevel" value={form.careLevel} onChange={set} placeholder="例：第三級" />
+            <Field label="身心障礙" field="disability" value={form.disability} onChange={set} placeholder="選填" />
+            <Field label="主要照顧者" field="guardian" value={form.guardian} onChange={set} placeholder="選填" />
+            <Field label="照顧者電話" field="guardianPhone" value={form.guardianPhone} onChange={set} placeholder="選填" />
             <div className="col-span-2">
               <label className="block text-xs font-medium text-gray-600 mb-1">備註</label>
               <textarea
