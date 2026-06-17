@@ -78,14 +78,17 @@ function NewCaseModal({ onClose }: { onClose: () => void }) {
   const { addCase, settings } = useStore()
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
+  const [syncError, setSyncError] = useState('')
+  const [pendingCase, setPendingCase] = useState<Case | null>(null)
 
   const set = (field: string, value: string) =>
     setForm(prev => ({ ...prev, [field]: value }))
 
   const handleSubmit = async () => {
-    if (!form.name.trim()) return
+    if (!pendingCase && !form.name.trim()) return
     setSaving(true)
-    const newCase: Case = {
+    setSyncError('')
+    const newCase: Case = pendingCase || {
       id: Date.now().toString(),
       name: form.name.trim(),
       caseNumber: form.caseNumber.trim(),
@@ -103,10 +106,13 @@ function NewCaseModal({ onClose }: { onClose: () => void }) {
       notes: form.notes.trim(),
       services: [],
     }
-    addCase(newCase)
+    if (!pendingCase) {
+      addCase(newCase)
+      setPendingCase(newCase)
+    }
     if (settings.appsScriptUrl) {
       try {
-        await fetch('/api/update-case', {
+        const res = await fetch('/api/update-case', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -115,7 +121,17 @@ function NewCaseModal({ onClose }: { onClose: () => void }) {
             fields: newCase,
           }),
         })
-      } catch {}
+        const data = await res.json()
+        if (data.synced === false) {
+          setSaving(false)
+          setSyncError(data.error || '同步失敗，個案已存於本機但尚未寫入 Google Sheet')
+          return
+        }
+      } catch (e: unknown) {
+        setSaving(false)
+        setSyncError(e instanceof Error ? e.message : '同步失敗，個案已存於本機但尚未寫入 Google Sheet')
+        return
+      }
     }
     setSaving(false)
     onClose()
@@ -177,19 +193,27 @@ function NewCaseModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
+        {syncError && (
+          <div className="px-6 pb-3">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700">
+              ⚠ 個案已存於本機，但同步至 Google Sheet 失敗：{syncError}
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-3 px-6 pb-5">
           <button
             onClick={onClose}
             className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors"
           >
-            取消
+            {syncError ? '關閉' : '取消'}
           </button>
           <button
             onClick={handleSubmit}
             disabled={!form.name.trim() || saving}
             className="flex-1 py-2.5 bg-[#7a9985] text-white rounded-xl text-sm font-medium hover:bg-[#6b8a76] disabled:opacity-40 transition-colors"
           >
-            {saving ? '儲存中...' : '新增個案'}
+            {saving ? '儲存中...' : syncError ? '重試同步' : '新增個案'}
           </button>
         </div>
       </div>
