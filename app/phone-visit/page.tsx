@@ -134,9 +134,12 @@ function PhoneVisitContent() {
     const newPicked: Record<string, string> = {}
     for (const cat of CATEGORIES) {
       const pool = sentences.filter(s => s.category === cat)
-      if (cat === 'service' && caseObj?.services?.length) {
+      if (cat === 'service') {
         // prefer sentences whose serviceType matches a case service; fall back to general sentences (no serviceType)
-        const matched = pool.filter(s => s.serviceType && caseObj.services.some(svc => svc.includes(s.serviceType!) || s.serviceType!.includes(svc)))
+        const caseServices = caseObj?.services || []
+        const matched = caseServices.length > 0
+          ? pool.filter(s => s.serviceType && caseServices.some(svc => svc.includes(s.serviceType!) || s.serviceType!.includes(svc)))
+          : []
         const general = pool.filter(s => !s.serviceType)
         const preferred = matched.length > 0 ? matched : general.length > 0 ? general : pool
         newPicked[cat] = pickRandom(preferred)
@@ -170,6 +173,16 @@ function PhoneVisitContent() {
 
   const swapOne = (cat: string) => {
     const pool = sentences.filter(s => s.category === cat)
+    if (cat === 'service') {
+      const caseServices = selectedCase?.services || []
+      const matched = caseServices.length > 0
+        ? pool.filter(s => s.serviceType && caseServices.some(svc => svc.includes(s.serviceType!) || s.serviceType!.includes(svc)))
+        : []
+      const general = pool.filter(s => !s.serviceType)
+      const preferred = matched.length > 0 ? matched : general.length > 0 ? general : pool
+      setPicked(prev => ({ ...prev, [cat]: pickRandom(preferred, prev[cat]) }))
+      return
+    }
     setPicked(prev => ({ ...prev, [cat]: pickRandom(pool, prev[cat]) }))
   }
 
