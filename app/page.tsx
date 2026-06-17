@@ -80,61 +80,76 @@ function NewCaseModal({ onClose }: { onClose: () => void }) {
   const [saving, setSaving] = useState(false)
   const [syncError, setSyncError] = useState('')
   const [pendingCase, setPendingCase] = useState<Case | null>(null)
+  const [debugLog, setDebugLog] = useState<string[]>([])
 
   const set = (field: string, value: string) =>
     setForm(prev => ({ ...prev, [field]: value }))
 
   const handleSubmit = async () => {
-    if (!pendingCase && !form.name.trim()) return
-    setSaving(true)
-    setSyncError('')
-    const newCase: Case = pendingCase || {
-      id: Date.now().toString(),
-      name: form.name.trim(),
-      caseNumber: form.caseNumber.trim(),
-      phone: form.phone.trim(),
-      address: form.address.trim(),
-      birthDate: form.birthDate,
-      idNumber: '',
-      gender: '',
-      status: form.status,
-      startDate: new Date().toISOString().split('T')[0],
-      careLevel: form.careLevel.trim(),
-      disability: form.disability.trim(),
-      guardian: form.guardian.trim(),
-      guardianPhone: form.guardianPhone.trim(),
-      notes: form.notes.trim(),
-      services: [],
-    }
-    if (!pendingCase) {
-      addCase(newCase)
-      setPendingCase(newCase)
-    }
-    if (settings.appsScriptUrl) {
-      try {
-        const res = await fetch('/api/update-case', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            appsScriptUrl: settings.appsScriptUrl,
-            action: 'createCase',
-            fields: newCase,
-          }),
-        })
-        const data = await res.json()
-        if (data.synced === false) {
+    const log: string[] = []
+    const step = (msg: string) => { log.push(msg); setDebugLog([...log]) }
+    try {
+      step('① 按下新增個案')
+      if (!pendingCase && !form.name.trim()) { step('① 姓名為空，中止'); return }
+      setSaving(true)
+      setSyncError('')
+      const newCase: Case = pendingCase || {
+        id: Date.now().toString(),
+        name: form.name.trim(),
+        caseNumber: form.caseNumber.trim(),
+        phone: form.phone.trim(),
+        address: form.address.trim(),
+        birthDate: form.birthDate,
+        idNumber: '',
+        gender: '',
+        status: form.status,
+        startDate: new Date().toISOString().split('T')[0],
+        careLevel: form.careLevel.trim(),
+        disability: form.disability.trim(),
+        guardian: form.guardian.trim(),
+        guardianPhone: form.guardianPhone.trim(),
+        notes: form.notes.trim(),
+        services: [],
+      }
+      if (!pendingCase) {
+        step('② 寫入本機資料')
+        addCase(newCase)
+        setPendingCase(newCase)
+      }
+      step(`③ appsScriptUrl = ${settings.appsScriptUrl ? '有值' : '空白'}`)
+      if (settings.appsScriptUrl) {
+        step('④ 準備呼叫 /api/update-case ...')
+        try {
+          const res = await fetch('/api/update-case', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              appsScriptUrl: settings.appsScriptUrl,
+              action: 'createCase',
+              fields: newCase,
+            }),
+          })
+          step(`⑤ 收到回應，HTTP 狀態 = ${res.status}`)
+          const data = await res.json()
+          step(`⑥ 回應內容 = ${JSON.stringify(data)}`)
+          if (data.synced === false) {
+            setSaving(false)
+            setSyncError(data.error || '同步失敗，個案已存於本機但尚未寫入 Google Sheet')
+            return
+          }
+        } catch (e: unknown) {
+          step(`⑤ fetch 發生例外 = ${e instanceof Error ? e.message : String(e)}`)
           setSaving(false)
-          setSyncError(data.error || '同步失敗，個案已存於本機但尚未寫入 Google Sheet')
+          setSyncError(e instanceof Error ? e.message : '同步失敗，個案已存於本機但尚未寫入 Google Sheet')
           return
         }
-      } catch (e: unknown) {
-        setSaving(false)
-        setSyncError(e instanceof Error ? e.message : '同步失敗，個案已存於本機但尚未寫入 Google Sheet')
-        return
       }
+      step('⑦ 完成（除錯模式下視窗不自動關閉，請手動按關閉）')
+      setSaving(false)
+    } catch (e: unknown) {
+      step(`✖ 未預期的錯誤 = ${e instanceof Error ? e.message : String(e)}`)
+      setSaving(false)
     }
-    setSaving(false)
-    onClose()
   }
 
   return (
@@ -204,6 +219,14 @@ function NewCaseModal({ onClose }: { onClose: () => void }) {
         <div className="px-6 pb-3 text-xs text-gray-400">
           除錯資訊：appsScriptUrl = {settings.appsScriptUrl ? `"${settings.appsScriptUrl}"` : '（空白）'}
         </div>
+
+        {debugLog.length > 0 && (
+          <div className="px-6 pb-3">
+            <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-600 space-y-1">
+              {debugLog.map((line, i) => <div key={i}>{line}</div>)}
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-3 px-6 pb-5">
           <button
