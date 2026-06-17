@@ -680,6 +680,21 @@ ${problemSection}
     }
     if (Object.keys(caseUpdate).length > 0) {
       updateCase(selectedCase.id, caseUpdate)
+      if (settings.appsScriptUrl) {
+        try {
+          await fetch('/api/update-case', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              appsScriptUrl: settings.appsScriptUrl,
+              action: 'updateCase',
+              caseName: selectedCase.name,
+              caseNumber: selectedCase.caseNumber,
+              fields: caseUpdate,
+            }),
+          })
+        } catch {}
+      }
     }
     setSaved(true)
     if (settings.appsScriptUrl) {
