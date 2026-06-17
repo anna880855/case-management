@@ -39,7 +39,7 @@ function buildPrompt(
 ${sentenceBlock}
 ${customNote ? `\n補充說明（請一併融入）：${customNote}` : ''}
 
-請依照以下固定格式輸出（直接輸出，不要加任何說明文字，「三、訪談內容」之後的五項請直接照抄下方內容，不要自行改寫或新增）：
+請依照以下固定格式輸出（直接輸出，不要加任何說明文字，「三、訪談內容」之後的項目請直接照抄下方內容，不要自行改寫或新增）：
 
 一、電訪日期：${date}
 二、電訪對象：${target || c.guardian || c.name}
@@ -72,11 +72,11 @@ function parseVisitTarget(raw: string): string {
 const PLAN_KEYS = ['care', 'transport', 'aids', 'respite', 'referral'] as const
 type PlanKey = typeof PLAN_KEYS[number]
 const PLAN_LABELS: Record<PlanKey, string> = {
-  care: '一、照顧及專業服務',
-  transport: '二、交通接送服務',
-  aids: '三、輔具及居家無障礙環境改善',
-  respite: '四、喘息服務',
-  referral: '五、轉介其他資源',
+  care: '四、照顧及專業服務',
+  transport: '五、交通接送服務',
+  aids: '六、輔具及居家無障礙環境改善',
+  respite: '七、喘息服務',
+  referral: '八、轉介其他資源',
 }
 const PLAN_DEFAULTS: Record<PlanKey, string> = {
   care: '服務穩定無須異動。',
@@ -86,11 +86,11 @@ const PLAN_DEFAULTS: Record<PlanKey, string> = {
   referral: '無轉介。',
 }
 const PLAN_PATTERNS: Record<PlanKey, RegExp> = {
-  care: /一、照顧及專業服務：([^\n]*)/,
-  transport: /二、交通接送服務：([^\n]*)/,
-  aids: /三、輔具及居家無障礙環境改善：([^\n]*)/,
-  respite: /四、喘息服務：([^\n]*)/,
-  referral: /五、轉介其他資源：([^\n]*)/,
+  care: /照顧及專業服務：([^\n]*)/,
+  transport: /交通接送服務：([^\n]*)/,
+  aids: /輔具及居家無障礙環境改善：([^\n]*)/,
+  respite: /喘息服務：([^\n]*)/,
+  referral: /轉介其他資源：([^\n]*)/,
 }
 
 function parsePlanBlock(content: string): Record<PlanKey, string> {
@@ -123,6 +123,15 @@ function PhoneVisitContent() {
   const [caseSearch, setCaseSearch] = useState('')
   const [picked, setPicked] = useState<Record<string, string>>({})
   const [planBlock, setPlanBlock] = useState<Record<PlanKey, string>>({ ...PLAN_DEFAULTS })
+
+  type GoalKey = 'short' | 'mid' | 'long'
+  const GOAL_STATUSES = ['已完成', '完成＿%', '尚未完成', '持續追蹤', '無法完成'] as const
+  const [goalTracking, setGoalTracking] = useState<Record<GoalKey, { status: string; percent: string }>>({
+    short: { status: '', percent: '' },
+    mid: { status: '', percent: '' },
+    long: { status: '', percent: '' },
+  })
+  const goalLabels: Record<GoalKey, string> = { short: '短期目標', mid: '中期目標', long: '長期目標' }
 
   const pickRandom = (pool: Sentence[], exclude?: string) => {
     const others = exclude ? pool.filter(s => s.text !== exclude) : pool
@@ -196,6 +205,7 @@ function PhoneVisitContent() {
     setSaved(false)
     setTarget(prevTarget || parseVisitTarget(c?.visitTarget || '') || c?.guardian || '')
     setPlanBlock(prevVisits.length > 0 ? parsePlanBlock(prevVisits[0].content) : { ...PLAN_DEFAULTS })
+    setGoalTracking({ short: { status: '', percent: '' }, mid: { status: '', percent: '' }, long: { status: '', percent: '' } })
     autoSelect(c)
   }
 
@@ -209,6 +219,22 @@ function PhoneVisitContent() {
     .filter(cat => picked[cat])
     .map(cat => ({ category: CATEGORY_LABELS[cat], text: picked[cat] }))
 
+  const buildGoalBlock = () => {
+    if (!selectedCase) return ''
+    const goals: { key: GoalKey; text: string }[] = [
+      { key: 'short' as GoalKey, text: selectedCase.shortGoal || '' },
+      { key: 'mid' as GoalKey, text: selectedCase.midGoal || '' },
+      { key: 'long' as GoalKey, text: selectedCase.longGoal || '' },
+    ].filter(g => g.text)
+    if (goals.length === 0) return ''
+    const lines = goals.map(g => {
+      const t = goalTracking[g.key]
+      const statusText = t.status === '完成＿%' ? `完成${t.percent || '?'}%` : t.status
+      return `${goalLabels[g.key]}：${g.text}\n　→ ${statusText || '（未填）'}`
+    })
+    return `九、復能目標追蹤進度：\n${lines.join('\n')}`
+  }
+
   const handleQuickCombine = () => {
     if (!selectedCase) { setError('請選擇個案'); return }
     if (pickedSentences.length === 0) { setError('句型庫為空，請先到「設定」頁面按「重設預設句型庫」'); return }
@@ -218,6 +244,7 @@ function PhoneVisitContent() {
     const day = d.getDate()
     const visitTarget = target || selectedCase.guardian || selectedCase.name
     const content = pickedSentences.map(s => s.text).join(pickedSentences.length > 1 ? '　' : '')
+    const goalBlock = buildGoalBlock()
     const result = `一、電訪日期：民國${year}年${month}月${day}日 ${time}
 二、電訪對象：${visitTarget}
 三、訪談內容：
@@ -226,7 +253,7 @@ ${PLAN_LABELS.care}：${planBlock.care}
 ${PLAN_LABELS.transport}：${planBlock.transport}
 ${PLAN_LABELS.aids}：${planBlock.aids}
 ${PLAN_LABELS.respite}：${planBlock.respite}
-${PLAN_LABELS.referral}：${planBlock.referral}`
+${PLAN_LABELS.referral}：${planBlock.referral}${goalBlock ? `\n${goalBlock}` : ''}`
     setGenerated(result)
     setSaved(false)
     setError('')
@@ -251,7 +278,8 @@ ${PLAN_LABELS.referral}：${planBlock.referral}`
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      setGenerated(data.content)
+      const goalBlock = buildGoalBlock()
+      setGenerated(data.content + (goalBlock ? `\n${goalBlock}` : ''))
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : '產生失敗，請再試一次')
     } finally {
@@ -445,6 +473,51 @@ ${PLAN_LABELS.referral}：${planBlock.referral}`
               </div>
             )}
           </div>
+
+          {/* 目標追蹤 */}
+          {selectedCase && (selectedCase.shortGoal || selectedCase.midGoal || selectedCase.longGoal) && (
+            <div className="bg-white rounded-xl border border-gray-100 p-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">目標追蹤進度</h3>
+              <div className="space-y-3">
+                {(['short', 'mid', 'long'] as GoalKey[]).map(key => {
+                  const goalText = key === 'short' ? selectedCase.shortGoal : key === 'mid' ? selectedCase.midGoal : selectedCase.longGoal
+                  if (!goalText) return null
+                  const tracking = goalTracking[key]
+                  return (
+                    <div key={key} className="p-3 bg-gray-50 rounded-lg">
+                      <p className="text-xs font-semibold text-[#7a9985] mb-1">{goalLabels[key]}</p>
+                      <p className="text-sm text-gray-700 mb-2">{goalText}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {GOAL_STATUSES.map(s => (
+                          <button
+                            key={s}
+                            onClick={() => setGoalTracking(p => ({ ...p, [key]: { ...p[key], status: s } }))}
+                            className={`px-2.5 py-1 text-xs rounded-lg border transition-colors ${
+                              tracking.status === s
+                                ? 'bg-[#7a9985] text-white border-[#7a9985]'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-[#a3bcaa]'
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                        {tracking.status === '完成＿%' && (
+                          <input
+                            type="number"
+                            min={0} max={100}
+                            value={tracking.percent}
+                            onChange={e => setGoalTracking(p => ({ ...p, [key]: { ...p[key], percent: e.target.value } }))}
+                            placeholder="百分比"
+                            className="w-20 px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#a3bcaa]"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* 服務計劃內容追蹤 */}
           <div className="bg-white rounded-xl border border-gray-100 p-4">
