@@ -72,11 +72,11 @@ function parseVisitTarget(raw: string): string {
 const PLAN_KEYS = ['care', 'transport', 'aids', 'respite', 'referral'] as const
 type PlanKey = typeof PLAN_KEYS[number]
 const PLAN_LABELS: Record<PlanKey, string> = {
-  care: '四、照顧及專業服務',
-  transport: '五、交通接送服務',
-  aids: '六、輔具及居家無障礙環境改善',
-  respite: '七、喘息服務',
-  referral: '八、轉介其他資源',
+  care: '一、照顧及專業服務',
+  transport: '二、交通接送服務',
+  aids: '三、輔具及居家無障礙環境改善',
+  respite: '四、喘息服務',
+  referral: '五、轉介其他資源',
 }
 const PLAN_DEFAULTS: Record<PlanKey, string> = {
   care: '服務穩定無須異動。',
@@ -232,7 +232,7 @@ function PhoneVisitContent() {
       const statusText = t.status === '完成＿%' ? `完成${t.percent || '?'}%` : t.status
       return `${goalLabels[g.key]}：${g.text}\n　→ ${statusText || '（未填）'}`
     })
-    return `九、復能目標追蹤進度：\n${lines.join('\n')}`
+    return `復能目標追蹤進度：\n${lines.join('\n')}`
   }
 
   const handleQuickCombine = () => {
@@ -249,11 +249,12 @@ function PhoneVisitContent() {
 二、電訪對象：${visitTarget}
 三、訪談內容：
 ${content}${customNote ? `　${customNote}` : ''}
+${goalBlock ? `\n${goalBlock}\n` : ''}
 ${PLAN_LABELS.care}：${planBlock.care}
 ${PLAN_LABELS.transport}：${planBlock.transport}
 ${PLAN_LABELS.aids}：${planBlock.aids}
 ${PLAN_LABELS.respite}：${planBlock.respite}
-${PLAN_LABELS.referral}：${planBlock.referral}${goalBlock ? `\n${goalBlock}` : ''}`
+${PLAN_LABELS.referral}：${planBlock.referral}`
     setGenerated(result)
     setSaved(false)
     setError('')
@@ -279,7 +280,12 @@ ${PLAN_LABELS.referral}：${planBlock.referral}${goalBlock ? `\n${goalBlock}` : 
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       const goalBlock = buildGoalBlock()
-      setGenerated(data.content + (goalBlock ? `\n${goalBlock}` : ''))
+      const marker = PLAN_LABELS.care
+      const markerIndex = data.content.indexOf(marker)
+      const finalContent = goalBlock && markerIndex !== -1
+        ? `${data.content.slice(0, markerIndex)}${goalBlock}\n\n${data.content.slice(markerIndex)}`
+        : data.content + (goalBlock ? `\n${goalBlock}` : '')
+      setGenerated(finalContent)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : '產生失敗，請再試一次')
     } finally {
