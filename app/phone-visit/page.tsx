@@ -534,7 +534,12 @@ ${PLAN_LABELS.referral}：${planBlock.referral}`
                   </button>
                 </div>
               </div>
-              <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans leading-relaxed bg-gray-50 rounded-lg p-4">{generated}</pre>
+              <textarea
+                value={generated}
+                onChange={e => { setGenerated(e.target.value); setSaved(false) }}
+                rows={12}
+                className="w-full whitespace-pre-wrap text-sm text-gray-700 font-sans leading-relaxed bg-gray-50 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-[#a3bcaa] resize-y"
+              />
             </div>
           )}
         </div>
