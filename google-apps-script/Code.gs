@@ -57,6 +57,10 @@ const FIELD_MAP = {
   '服務項目': 'services', '使用服務': 'services', '服務': 'services',
   '長照服務': 'services', '服務內容': 'services', '核定服務': 'services',
   '使用服務項目': 'services',
+  // 短中長期目標
+  '短期目標': 'shortGoal', '短期照顧目標': 'shortGoal',
+  '中期目標': 'midGoal', '中期照顧目標': 'midGoal',
+  '長期目標': 'longGoal', '長期照顧目標': 'longGoal',
   // 備註
   '備註': 'notes', '注意事項': 'notes', '備注': 'notes',
   '說明': 'notes', '特殊狀況': 'notes', '其他': 'notes',
