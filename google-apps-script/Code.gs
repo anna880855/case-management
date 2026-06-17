@@ -215,8 +215,7 @@ function deleteCaseRow(caseName, caseNumber) {
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_NAME) || ss.getSheets()[0];
-  // 清除姓名欄位，讓下次同步時不會載入此列
-  sheet.getRange(rowIndex, 1).clearContent();
+  sheet.deleteRow(rowIndex);
 }
 
 function output(data) {
