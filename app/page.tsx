@@ -394,6 +394,11 @@ function CaseRow({ case_: c, visitFilter }: { case_: Case; visitFilter: VisitFil
           {c.careLevel && <span>等級 {c.careLevel}</span>}
           {c.guardian && <span>照顧者 {c.guardian}</span>}
         </div>
+        {(c.notes || c.notes2) && (
+          <p className="mt-1 text-xs text-amber-700 bg-amber-50 rounded px-2 py-1 truncate">
+            📌 {[c.notes, c.notes2].filter(Boolean).join('　')}
+          </p>
+        )}
       </div>
       <div className="text-right text-sm text-gray-400 flex-shrink-0 hidden sm:block">
         {c.phone && <div>{c.phone}</div>}
