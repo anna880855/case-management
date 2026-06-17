@@ -145,12 +145,8 @@ function findRow(caseName, caseNumber) {
   const data = sheet.getDataRange().getValues();
   const headers = data[0].map(function(h) { return String(h).trim(); });
 
-  const nameColIdx = headers.findIndex(function(h) {
-    return ['姓名', '個案姓名', '案主姓名'].indexOf(h) >= 0;
-  });
-  const numColIdx = headers.findIndex(function(h) {
-    return ['個案編號', '編號', '案號'].indexOf(h) >= 0;
-  });
+  const nameColIdx = headers.findIndex(function(h) { return FIELD_MAP[h] === 'name'; });
+  const numColIdx = headers.findIndex(function(h) { return FIELD_MAP[h] === 'caseNumber'; });
 
   for (var i = 1; i < data.length; i++) {
     var rowName = nameColIdx >= 0 ? String(data[i][nameColIdx] || '').trim() : String(data[i][0] || '').trim();
