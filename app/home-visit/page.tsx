@@ -279,6 +279,7 @@ function HomeVisitContent() {
   // ── Generated / saved
   const [finalDoc, setFinalDoc] = useState('')
   const [saved, setSaved] = useState(false)
+  const [syncWarning, setSyncWarning] = useState('')
   const [error, setError] = useState('')
 
   // ── Generating flags
@@ -697,9 +698,10 @@ ${problemSection}
       }
     }
     setSaved(true)
+    setSyncWarning('')
     if (settings.appsScriptUrl) {
       try {
-        await fetch('/api/save-visit', {
+        const res = await fetch('/api/save-visit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -716,7 +718,15 @@ ${problemSection}
             },
           }),
         })
-      } catch {}
+        const data = await res.json()
+        if (!data.synced) {
+          setSyncWarning(`已儲存在本機，但雲端同步失敗${data.error ? '：' + data.error : ''}。請檢查網路或 Apps Script 設定後重新整理頁面再試。`)
+        }
+      } catch {
+        setSyncWarning('已儲存在本機，但雲端同步失敗（網路錯誤）。換電腦前請確認此筆紀錄已同步。')
+      }
+    } else {
+      setSyncWarning('尚未設定 Apps Script URL，此筆紀錄只存在本機瀏覽器，換電腦將無法看到。請至「系統設定」設定後重新儲存。')
     }
   }
 
@@ -1777,6 +1787,11 @@ ${problemSection}
                         </button>
                       </div>
                     </div>
+                    {syncWarning && (
+                      <div className="px-4 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700">
+                        ⚠ {syncWarning}
+                      </div>
+                    )}
                     <textarea
                       value={finalDoc}
                       onChange={e => { setFinalDoc(e.target.value); setSaved(false) }}
