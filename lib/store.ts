@@ -86,8 +86,6 @@ interface StoreActions {
   deletePhoneVisit: (id: string) => void
   addHomeVisit: (visit: HomeVisitRecord) => void
   deleteHomeVisit: (id: string) => void
-  importPhoneVisits: (visits: PhoneVisitRecord[]) => void
-  importHomeVisits: (visits: HomeVisitRecord[]) => void
   addSentence: (sentence: Sentence) => void
   deleteSentence: (id: string) => void
   setSentences: (sentences: Sentence[]) => void
@@ -147,20 +145,6 @@ export const useStore = create<StoreState & StoreActions>()(
 
       deleteHomeVisit: (id) =>
         set((state) => ({ homeVisits: state.homeVisits.filter((v) => v.id !== id) })),
-
-      importPhoneVisits: (visits) =>
-        set((state) => {
-          const existingKeys = new Set(state.phoneVisits.map((v) => `${v.caseId}|${v.date}|${v.content}`))
-          const toAdd = visits.filter((v) => !existingKeys.has(`${v.caseId}|${v.date}|${v.content}`))
-          return { phoneVisits: [...toAdd, ...state.phoneVisits] }
-        }),
-
-      importHomeVisits: (visits) =>
-        set((state) => {
-          const existingKeys = new Set(state.homeVisits.map((v) => `${v.caseId}|${v.date}|${v.planContent}`))
-          const toAdd = visits.filter((v) => !existingKeys.has(`${v.caseId}|${v.date}|${v.planContent}`))
-          return { homeVisits: [...toAdd, ...state.homeVisits] }
-        }),
 
       addSentence: (sentence) =>
         set((state) => ({ sentences: [...state.sentences, sentence] })),
