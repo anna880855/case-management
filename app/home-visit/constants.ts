@@ -38,7 +38,7 @@ export const MEDICATION_STATUS_OPTIONS = [
 export const MEDICATION_NOTES_OPTIONS = ['需提醒用藥', '要磨粉', '要協助服用', '抗拒用藥']
 
 export const MEMORY_OPTIONS = ['正常', '短期記憶力退化', '長期記憶力退化', '短長期記憶力皆退化']
-export const COGNITION_OPTIONS = ['人物混亂', '時間混亂', '地點混亂', '數學邏輯差', '危險判斷差']
+export const COGNITION_OPTIONS = ['正常', '人物混亂', '時間混亂', '地點混亂', '數學邏輯差', '危險判斷差']
 export const EMOTION_OPTIONS = ['穩定', '焦慮', '易怒', '低落', '淡漠', '固執', '無法判斷']
 export const CONSCIOUSNESS_OPTIONS = ['清醒', '混亂', '昏迷', '嗜睡', '無法判斷']
 export const COMPREHENSION_OPTIONS = ['正常', '大部分可理解', '僅可理解單詞', '無法理解']
