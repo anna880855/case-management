@@ -183,7 +183,7 @@ export const useStore = create<StoreState & StoreActions>()(
     }),
     {
       name: 'case-mgmt-v1',
-      version: 7,
+      version: 8,
       migrate: (persistedState: unknown, version: number) => {
         let state = persistedState as StoreState & StoreActions
         if (version < 2) {
@@ -221,6 +221,14 @@ export const useStore = create<StoreState & StoreActions>()(
               ...rest,
               notes: [rest.notes, notes2].filter(Boolean).join('\n'),
             })),
+          }
+        }
+        if (version < 8) {
+          // 移除未使用的家訪間隔月數欄位
+          const existing: (Case & { homeVisitIntervalMonths?: string })[] = state.cases || []
+          state = {
+            ...state,
+            cases: existing.map(({ homeVisitIntervalMonths, ...rest }) => rest),
           }
         }
         return state

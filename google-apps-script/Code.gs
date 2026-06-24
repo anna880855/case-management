@@ -69,8 +69,6 @@ const FIELD_MAP = {
   '電訪對象': 'visitTarget', '訪視對象': 'visitTarget',
   // 最近家訪日
   '最近家訪日': 'lastHomeVisitDate', '最近家訪日期': 'lastHomeVisitDate', '上次家訪日': 'lastHomeVisitDate',
-  // 家訪間隔月數
-  '家訪間隔月數': 'homeVisitIntervalMonths',
   // 負責社工
   '負責社工': 'responsibleWorker', '社工': 'responsibleWorker', '個管師': 'responsibleWorker',
 };

@@ -18,7 +18,6 @@ export interface Case {
   visitTarget?: string
   caseHomeServices?: { id: string; category: string; code: string; name: string; units: string }[]
   lastHomeVisitDate?: string
-  homeVisitIntervalMonths?: string
   shortGoal?: string
   midGoal?: string
   longGoal?: string
