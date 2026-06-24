@@ -74,6 +74,7 @@ interface StoreState {
   homeVisits: HomeVisitRecord[]
   sentences: Sentence[]
   settings: Settings
+  disabilityReminderDismissed: Record<string, string>
 }
 
 interface StoreActions {
@@ -95,6 +96,7 @@ interface StoreActions {
   getCaseById: (id: string) => Case | undefined
   getPhoneVisitsByCase: (caseId: string) => PhoneVisitRecord[]
   getHomeVisitsByCase: (caseId: string) => HomeVisitRecord[]
+  dismissDisabilityReminder: (caseId: string, periodKey: string) => void
 }
 
 export const useStore = create<StoreState & StoreActions>()(
@@ -113,6 +115,7 @@ export const useStore = create<StoreState & StoreActions>()(
         phoneVisitSheetName: '電訪紀錄',
         homeVisitSheetName: '家訪紀錄',
       },
+      disabilityReminderDismissed: {},
 
       setCases: (cases) => set({ cases }),
 
@@ -180,6 +183,11 @@ export const useStore = create<StoreState & StoreActions>()(
 
       getHomeVisitsByCase: (caseId) =>
         get().homeVisits.filter((v) => v.caseId === caseId),
+
+      dismissDisabilityReminder: (caseId, periodKey) =>
+        set((state) => ({
+          disabilityReminderDismissed: { ...state.disabilityReminderDismissed, [caseId]: periodKey },
+        })),
     }),
     {
       name: 'case-mgmt-v1',

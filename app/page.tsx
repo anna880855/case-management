@@ -224,7 +224,7 @@ function NewCaseModal({ onClose }: { onClose: () => void }) {
 }
 
 export default function HomePage() {
-  const { cases, phoneVisits, homeVisits } = useStore()
+  const { cases, phoneVisits, homeVisits, disabilityReminderDismissed, dismissDisabilityReminder } = useStore()
   const [mounted, setMounted] = useState(false)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('active')
@@ -237,8 +237,23 @@ export default function HomePage() {
   const thisMonth = now.getMonth()
   const sixMonthsAgo = new Date(now)
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+  const oneMonthLater = new Date(now)
+  oneMonthLater.setMonth(oneMonthLater.getMonth() + 1)
+  const inReminderWindow = now.getDate() >= 5 && now.getDate() <= 10
+  const reminderPeriodKey = `${thisYear}-${thisMonth}`
 
   const activeCases = useMemo(() => cases.filter(c => c.status === 'active'), [cases])
+
+  const expiringDisabilityCases = useMemo(() => {
+    if (!inReminderWindow) return []
+    return activeCases.filter(c => {
+      if (!c.disabilityExpiry) return false
+      const d = new Date(c.disabilityExpiry)
+      if (isNaN(d.getTime())) return false
+      if (d < now || d > oneMonthLater) return false
+      return disabilityReminderDismissed[c.id] !== reminderPeriodKey
+    })
+  }, [activeCases, inReminderWindow, reminderPeriodKey, disabilityReminderDismissed]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isThisMonth = (raw?: string) => {
     if (!raw) return false
@@ -340,6 +355,27 @@ export default function HomePage() {
             </div>
             <span className="text-2xl">🏠</span>
           </button>
+        </div>
+      )}
+
+      {expiringDisabilityCases.length > 0 && (
+        <div className="mb-4 bg-[#fdf2e3] border border-[#e8c79a] rounded-xl px-4 py-3">
+          <p className="text-sm font-medium text-[#8a5a1f] mb-2">⚠️ 身障證明即將過期提醒（1個月內到期）</p>
+          <div className="space-y-1.5">
+            {expiringDisabilityCases.map(c => (
+              <div key={c.id} className="flex items-center justify-between text-sm">
+                <Link href={`/cases/${c.id}`} className="text-[#8a5a1f] hover:underline">
+                  {c.name}（編號 {c.caseNumber || '－'}）－ 到期日：{c.disabilityExpiry}
+                </Link>
+                <button
+                  onClick={() => dismissDisabilityReminder(c.id, reminderPeriodKey)}
+                  className="text-xs text-[#8a5a1f]/70 hover:text-[#8a5a1f] px-2 py-0.5 rounded border border-[#e8c79a] hover:bg-[#f5e2c2]"
+                >
+                  知道了
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
