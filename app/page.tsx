@@ -98,7 +98,6 @@ function NewCaseModal({ onClose }: { onClose: () => void }) {
       idNumber: '',
       gender: '',
       status: form.status,
-      startDate: new Date().toISOString().split('T')[0],
       careLevel: form.careLevel.trim(),
       disability: form.disability.trim(),
       guardian: form.guardian.trim(),
@@ -431,9 +430,9 @@ function CaseRow({ case_: c, visitFilter }: { case_: Case; visitFilter: VisitFil
           {c.careLevel && <span>等級 {c.careLevel}</span>}
           {c.guardian && <span>照顧者 {c.guardian}</span>}
         </div>
-        {(c.notes || c.notes2) && (
+        {c.notes && (
           <p className="mt-1 text-xs text-amber-700 bg-amber-50 rounded px-2 py-1 truncate">
-            📌 {[c.notes, c.notes2].filter(Boolean).join('　')}
+            📌 {c.notes}
           </p>
         )}
       </div>

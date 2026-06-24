@@ -50,15 +50,14 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
       birthDate: c.birthDate,
       idNumber: c.idNumber,
       gender: c.gender || '',
-      startDate: c.startDate,
       careLevel: c.careLevel,
       disability: c.disability,
+      disabilityExpiry: c.disabilityExpiry || '',
       guardian: c.guardian,
       guardianPhone: c.guardianPhone,
       visitTarget: c.visitTarget || '',
       lastHomeVisitDate: c.lastHomeVisitDate || '',
       notes: c.notes,
-      notes2: c.notes2 || '',
       shortGoal: c.shortGoal || '',
       midGoal: c.midGoal || '',
       longGoal: c.longGoal || '',
@@ -213,12 +212,12 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
               <EditField label="身分證" value={ef.idNumber || ''} onChange={v => setEditFields(p => ({ ...p, idNumber: v }))} />
               <EditField label="電話" value={ef.phone || ''} onChange={v => setEditFields(p => ({ ...p, phone: v }))} />
               <EditField label="地址" value={ef.address || ''} onChange={v => setEditFields(p => ({ ...p, address: v }))} />
-              <EditField label="開案日期" value={ef.startDate || ''} onChange={v => setEditFields(p => ({ ...p, startDate: v }))} />
               <EditField label="負責社工" value={ef.responsibleWorker || ''} onChange={v => setEditFields(p => ({ ...p, responsibleWorker: v }))} />
             </div>
             <div className="space-y-3">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">照顧資訊</p>
               <EditField label="身障類別" value={ef.disability || ''} onChange={v => setEditFields(p => ({ ...p, disability: v }))} />
+              <EditField label="身障期限" value={ef.disabilityExpiry || ''} onChange={v => setEditFields(p => ({ ...p, disabilityExpiry: v }))} />
               <EditField label="照顧等級" value={ef.careLevel || ''} onChange={v => setEditFields(p => ({ ...p, careLevel: v }))} />
               <EditField label="電訪對象" value={ef.visitTarget || ''} onChange={v => setEditFields(p => ({ ...p, visitTarget: v }))} />
               <EditField label="主要照顧者" value={ef.guardian || ''} onChange={v => setEditFields(p => ({ ...p, guardian: v }))} />
@@ -257,20 +256,10 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
           <div className="mt-4 space-y-3">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">備註</p>
             <div>
-              <label className="block text-xs text-gray-400 mb-1">備註1</label>
               <textarea
                 value={ef.notes || ''}
                 onChange={e => setEditFields(p => ({ ...p, notes: e.target.value }))}
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">備註2</label>
-              <textarea
-                value={ef.notes2 || ''}
-                onChange={e => setEditFields(p => ({ ...p, notes2: e.target.value }))}
-                rows={2}
+                rows={3}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
               />
             </div>
@@ -290,7 +279,6 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
                 <InfoRow label="身分證" value={c.idNumber} />
                 <InfoRow label="電話" value={c.phone} />
                 <InfoRow label="地址" value={c.address} />
-                <InfoRow label="開案日期" value={c.startDate} />
                 <InfoRow label="負責社工" value={c.responsibleWorker} />
               </dl>
             </div>
@@ -299,6 +287,7 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
               <h3 className="font-semibold text-gray-700 mb-4 pb-2 border-b border-gray-50">照顧資訊</h3>
               <dl className="space-y-2.5">
                 <InfoRow label="身障類別" value={c.disability} />
+                <InfoRow label="身障期限" value={c.disabilityExpiry} />
                 <InfoRow label="電訪對象" value={c.visitTarget} />
                 <InfoRow label="主要照顧者" value={c.guardian} />
                 <InfoRow label="照顧者電話" value={c.guardianPhone} />
@@ -325,11 +314,10 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
             </div>
           </div>
 
-          {(c.notes || c.notes2) && (
+          {c.notes && (
             <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 mb-5">
               <h3 className="font-medium text-amber-800 mb-1 text-sm">備註</h3>
-              {c.notes && <p className="text-sm text-amber-700 whitespace-pre-wrap">{c.notes}</p>}
-              {c.notes2 && <p className="text-sm text-amber-700 whitespace-pre-wrap mt-1">{c.notes2}</p>}
+              <p className="text-sm text-amber-700 whitespace-pre-wrap">{c.notes}</p>
             </div>
           )}
         </>

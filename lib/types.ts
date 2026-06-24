@@ -8,18 +8,16 @@ export interface Case {
   idNumber: string
   gender?: string
   status: 'active' | 'suspended' | 'closed'
-  startDate: string
   careLevel: string
   disability: string
+  disabilityExpiry?: string
   guardian: string
   guardianPhone: string
   notes: string
-  notes2?: string
   services: string[]
   visitTarget?: string
   caseHomeServices?: { id: string; category: string; code: string; name: string; units: string }[]
   lastHomeVisitDate?: string
-  homeVisitIntervalMonths?: string
   shortGoal?: string
   midGoal?: string
   longGoal?: string

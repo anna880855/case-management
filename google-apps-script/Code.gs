@@ -36,16 +36,15 @@ const FIELD_MAP = {
   // 狀態
   '狀態': 'status', '在案狀態': 'status', '個案狀態': 'status',
   '服務狀態': 'status', '案況': 'status',
-  // 開案日期
-  '開案日期': 'startDate', '開案': 'startDate', '收案日期': 'startDate',
-  '開案年月日': 'startDate', '服務開始日期': 'startDate',
   // 照顧等級
   '照顧等級': 'careLevel', '長照等級': 'careLevel', '失能等級': 'careLevel',
   'CMS等級': 'careLevel', 'cms等級': 'careLevel', '長照需要等級': 'careLevel',
   '核定等級': 'careLevel', '評估等級': 'careLevel',
-  // 失能狀況
+  // 失能狀況／身障類別
   '失能狀況': 'disability', '失能': 'disability', '身心狀況': 'disability',
-  '失能類別': 'disability', '障礙類別': 'disability',
+  '失能類別': 'disability', '障礙類別': 'disability', '身障類別': 'disability',
+  // 身障期限
+  '身障期限': 'disabilityExpiry',
   // 主要照顧者
   '主要照顧者': 'guardian', '照顧者': 'guardian', '家屬': 'guardian',
   '主照顧者': 'guardian', '主照者': 'guardian', '家屬姓名': 'guardian',
@@ -58,14 +57,20 @@ const FIELD_MAP = {
   // 服務項目
   '服務項目': 'services', '使用服務': 'services', '服務': 'services',
   '長照服務': 'services', '服務內容': 'services', '核定服務': 'services',
-  '使用服務項目': 'services',
+  '使用服務項目': 'services', '服務類型': 'services', '服務類別': 'services',
   // 短中長期目標
   '短期目標': 'shortGoal', '短期照顧目標': 'shortGoal',
   '中期目標': 'midGoal', '中期照顧目標': 'midGoal',
   '長期目標': 'longGoal', '長期照顧目標': 'longGoal',
   // 備註
-  '備註': 'notes', '注意事項': 'notes', '備注': 'notes',
+  '備註': 'notes', '備註1': 'notes', '注意事項': 'notes', '備注': 'notes',
   '說明': 'notes', '特殊狀況': 'notes', '其他': 'notes',
+  // 電訪對象
+  '電訪對象': 'visitTarget', '訪視對象': 'visitTarget',
+  // 最近家訪日
+  '最近家訪日': 'lastHomeVisitDate', '最近家訪日期': 'lastHomeVisitDate', '上次家訪日': 'lastHomeVisitDate',
+  // 負責社工
+  '負責社工': 'responsibleWorker', '社工': 'responsibleWorker', '個管師': 'responsibleWorker',
 };
 
 const STATUS_MAP = {

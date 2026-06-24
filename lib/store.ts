@@ -183,7 +183,7 @@ export const useStore = create<StoreState & StoreActions>()(
     }),
     {
       name: 'case-mgmt-v1',
-      version: 6,
+      version: 8,
       migrate: (persistedState: unknown, version: number) => {
         let state = persistedState as StoreState & StoreActions
         if (version < 2) {
@@ -211,6 +211,25 @@ export const useStore = create<StoreState & StoreActions>()(
           const defaultIds = new Set(DEFAULT_SENTENCES.map((s) => s.id))
           const custom = existing.filter((s) => !defaultIds.has(s.id) && !/^s\d+$/.test(s.id))
           state = { ...state, sentences: [...DEFAULT_SENTENCES, ...custom] }
+        }
+        if (version < 7) {
+          // 備註1／備註2 合併為單一備註欄位；開案日期欄位移除
+          const existing: (Case & { notes2?: string; startDate?: string })[] = state.cases || []
+          state = {
+            ...state,
+            cases: existing.map(({ notes2, startDate, ...rest }) => ({
+              ...rest,
+              notes: [rest.notes, notes2].filter(Boolean).join('\n'),
+            })),
+          }
+        }
+        if (version < 8) {
+          // 移除未使用的家訪間隔月數欄位
+          const existing: (Case & { homeVisitIntervalMonths?: string })[] = state.cases || []
+          state = {
+            ...state,
+            cases: existing.map(({ homeVisitIntervalMonths, ...rest }) => rest),
+          }
         }
         return state
       },
