@@ -14,6 +14,7 @@ import {
   GROSS_MOTOR_LEVELS, RISE_ABILITY_OPTIONS,
   PROBLEM_LIST, SERVICE_CATALOG, ServiceCategory,
 } from './constants'
+import { AI_STYLE_GUIDE } from '@/lib/aiStyle'
 
 // ─── Helper Components ────────────────────────────────────────────────────────
 
@@ -508,6 +509,8 @@ function HomeVisitContent() {
 用藥狀況：${medicationStatus.join('、') || '未填'}
 用藥注意事項：${medicationNotes.join('、') || '無'}
 
+${AI_STYLE_GUIDE}
+
 請直接輸出段落文字，不要標題或前置說明。`
       setDiseaseGenerated(await callAI(prompt))
     } finally { setGenDisease(false) }
@@ -546,6 +549,8 @@ ${calories.includes('另有其他營養來源') ? `額外營養：${nutritionExt
 
 【其他】${caseOther || '無'}
 
+${AI_STYLE_GUIDE}
+
 請直接輸出段落文字，不要標題或前置說明。`
       setCaseGenerated(await callAI(prompt))
     } finally { setGenCase(false) }
@@ -558,6 +563,8 @@ ${calories.includes('另有其他營養來源') ? `額外營養：${nutritionExt
       const prompt = `你是一位專業長照個案管理師，請將以下照顧者評估文字潤飾為3-4句臨床專業描述，使用繁體中文，語氣客觀，不要分條列項：
 
 ${caregiverInput}
+
+${AI_STYLE_GUIDE}
 
 請直接輸出潤飾後的文字，不要前置說明。`
       setCaregiverGenerated(await callAI(prompt))
@@ -578,6 +585,8 @@ ${caregiverInput}
 ${context ? `【個案摘述】\n${context}\n\n` : ''}問題清單（按優先順序）：
 ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 
+${AI_STYLE_GUIDE}
+
 請以「1. 問題名稱：說明文字」格式逐條輸出，不要其他說明。`
       setProblemExplanations(await callAI(prompt))
     } finally { setGenProblems(false) }
@@ -593,6 +602,8 @@ ${rankedProblems.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 個案狀況：${caseGenerated || '（未產生）'}
 照顧者評估：${caregiverGenerated || caregiverInput || '（未填）'}
 主要問題：${rankedProblems.join('、') || '（未選）'}
+
+${AI_STYLE_GUIDE}
 
 請以以下格式輸出：
 短期目標：（內容）
