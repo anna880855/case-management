@@ -679,11 +679,12 @@ ${problemSection}
     if (derivedServices.size > 0) {
       caseUpdate.services = Array.from(derivedServices)
     }
+    let caseUpdateWarning = ''
     if (Object.keys(caseUpdate).length > 0) {
       updateCase(selectedCase.id, caseUpdate)
       if (settings.appsScriptUrl) {
         try {
-          await fetch('/api/update-case', {
+          const res = await fetch('/api/update-case', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -694,7 +695,13 @@ ${problemSection}
               fields: caseUpdate,
             }),
           })
-        } catch {}
+          const data = await res.json()
+          if (!data.synced) {
+            caseUpdateWarning = `個案資料雲端同步失敗${data.error ? '：' + data.error : ''}。`
+          }
+        } catch {
+          caseUpdateWarning = '個案資料雲端同步失敗（網路錯誤）。'
+        }
       }
     }
     setSaved(true)
@@ -720,10 +727,12 @@ ${problemSection}
         })
         const data = await res.json()
         if (!data.synced) {
-          setSyncWarning(`已儲存在本機，但雲端同步失敗${data.error ? '：' + data.error : ''}。請檢查網路或 Apps Script 設定後重新整理頁面再試。`)
+          setSyncWarning(`已儲存在本機，但雲端同步失敗${data.error ? '：' + data.error : ''}。請檢查網路或 Apps Script 設定後重新整理頁面再試。${caseUpdateWarning}`)
+        } else if (caseUpdateWarning) {
+          setSyncWarning(caseUpdateWarning)
         }
       } catch {
-        setSyncWarning('已儲存在本機，但雲端同步失敗（網路錯誤）。換電腦前請確認此筆紀錄已同步。')
+        setSyncWarning(`已儲存在本機，但雲端同步失敗（網路錯誤）。換電腦前請確認此筆紀錄已同步。${caseUpdateWarning}`)
       }
     } else {
       setSyncWarning('尚未設定 Apps Script URL，此筆紀錄只存在本機瀏覽器，換電腦將無法看到。請至「系統設定」設定後重新儲存。')
@@ -736,7 +745,7 @@ ${problemSection}
     const fields = { shortGoal: careGoals.short, midGoal: careGoals.mid, longGoal: careGoals.long }
     updateCase(selectedCase.id, fields)
     try {
-      await fetch('/api/update-case', {
+      const res = await fetch('/api/update-case', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -747,7 +756,13 @@ ${problemSection}
           fields,
         }),
       })
-    } catch {}
+      const data = await res.json()
+      if (!data.synced) {
+        setSyncWarning(`照顧目標雲端同步失敗${data.error ? '：' + data.error : ''}。`)
+      }
+    } catch {
+      setSyncWarning('照顧目標雲端同步失敗（網路錯誤）。')
+    }
     setGoalSyncing(false)
     setGoalSynced(true)
     setTimeout(() => setGoalSynced(false), 3000)
