@@ -349,11 +349,23 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
       <div className="grid grid-cols-2 gap-4 mb-6">
         <VisitHistory
           title="電訪紀錄"
-          visits={phoneVisits.map(v => ({ id: v.id, date: v.date, preview: v.content }))}
+          visits={
+            phoneVisits.length > 0
+              ? phoneVisits.map(v => ({ id: v.id, date: v.date, preview: v.content }))
+              : c.lastPhoneVisitContent
+                ? [{ id: 'latest', date: c.lastPhoneVisitDate || '', preview: c.lastPhoneVisitContent }]
+                : []
+          }
         />
         <VisitHistory
           title="家訪紀錄"
-          visits={homeVisits.map(v => ({ id: v.id, date: v.date, preview: v.planContent }))}
+          visits={
+            homeVisits.length > 0
+              ? homeVisits.map(v => ({ id: v.id, date: v.date, preview: v.planContent }))
+              : c.lastHomeVisitContent
+                ? [{ id: 'latest', date: c.lastHomeVisitDate || '', preview: c.lastHomeVisitContent }]
+                : []
+          }
         />
       </div>
 

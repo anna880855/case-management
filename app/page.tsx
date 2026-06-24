@@ -25,7 +25,7 @@ const STATUS_FILTERS = [
 
 type VisitFilter = 'all' | 'no-phone' | 'no-home'
 
-function useVisitStatus(caseId: string) {
+function useVisitStatus(c: Case) {
   const { phoneVisits, homeVisits } = useStore()
   const now = new Date()
   const thisYear = now.getFullYear()
@@ -33,21 +33,24 @@ function useVisitStatus(caseId: string) {
   const sixMonthsAgo = new Date(now)
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
 
-  const hasPhoneThisMonth = phoneVisits.some(v => {
-    if (v.caseId !== caseId) return false
-    const d = new Date(v.date)
-    return d.getFullYear() === thisYear && d.getMonth() === thisMonth
-  }) || homeVisits.some(v => {
-    if (v.caseId !== caseId) return false
-    const d = new Date(v.date)
-    return d.getFullYear() === thisYear && d.getMonth() === thisMonth
-  })
+  const isThisMonth = (raw?: string) => {
+    if (!raw) return false
+    const d = new Date(raw)
+    return !isNaN(d.getTime()) && d.getFullYear() === thisYear && d.getMonth() === thisMonth
+  }
 
-  const hasHomeInSixMonths = homeVisits.some(v => {
-    if (v.caseId !== caseId) return false
-    const d = new Date(v.date)
-    return d >= sixMonthsAgo
-  })
+  const hasPhoneThisMonth = isThisMonth(c.lastPhoneVisitDate) || isThisMonth(c.lastHomeVisitDate) ||
+    phoneVisits.some(v => v.caseId === c.id && isThisMonth(v.date)) ||
+    homeVisits.some(v => v.caseId === c.id && isThisMonth(v.date))
+
+  const isWithinSixMonths = (raw?: string) => {
+    if (!raw) return false
+    const d = new Date(raw)
+    return !isNaN(d.getTime()) && d >= sixMonthsAgo
+  }
+
+  const hasHomeInSixMonths = isWithinSixMonths(c.lastHomeVisitDate) ||
+    homeVisits.some(v => v.caseId === c.id && isWithinSixMonths(v.date))
 
   return { hasPhoneThisMonth, hasHomeInSixMonths }
 }
@@ -237,24 +240,26 @@ export default function HomePage() {
 
   const activeCases = useMemo(() => cases.filter(c => c.status === 'active'), [cases])
 
+  const isThisMonth = (raw?: string) => {
+    if (!raw) return false
+    const d = new Date(raw)
+    return !isNaN(d.getTime()) && d.getFullYear() === thisYear && d.getMonth() === thisMonth
+  }
+  const isWithinSixMonths = (raw?: string) => {
+    if (!raw) return false
+    const d = new Date(raw)
+    return !isNaN(d.getTime()) && d >= sixMonthsAgo
+  }
+
   const noPhoneThisMonth = useMemo(() => activeCases.filter(c => {
-    const visitedThisMonth = (v: { caseId: string; date: string }) => {
-      if (v.caseId !== c.id) return false
-      const d = new Date(v.date)
-      return d.getFullYear() === thisYear && d.getMonth() === thisMonth
-    }
+    if (isThisMonth(c.lastPhoneVisitDate) || isThisMonth(c.lastHomeVisitDate)) return false
+    const visitedThisMonth = (v: { caseId: string; date: string }) => v.caseId === c.id && isThisMonth(v.date)
     return !phoneVisits.some(visitedThisMonth) && !homeVisits.some(visitedThisMonth)
   }), [activeCases, phoneVisits, homeVisits, thisYear, thisMonth])
 
   const noHomeInSixMonths = useMemo(() => activeCases.filter(c => {
-    if (c.lastHomeVisitDate) {
-      const d = new Date(c.lastHomeVisitDate)
-      if (!isNaN(d.getTime())) return d < sixMonthsAgo
-    }
-    return !homeVisits.some(v => {
-      if (v.caseId !== c.id) return false
-      return new Date(v.date) >= sixMonthsAgo
-    })
+    if (isWithinSixMonths(c.lastHomeVisitDate)) return false
+    return !homeVisits.some(v => v.caseId === c.id && isWithinSixMonths(v.date))
   }), [activeCases, homeVisits, sixMonthsAgo])
 
   const counts = useMemo(() => ({
@@ -402,7 +407,7 @@ export default function HomePage() {
 }
 
 function CaseRow({ case_: c, visitFilter }: { case_: Case; visitFilter: VisitFilter }) {
-  const { hasPhoneThisMonth, hasHomeInSixMonths } = useVisitStatus(c.id)
+  const { hasPhoneThisMonth, hasHomeInSixMonths } = useVisitStatus(c)
 
   return (
     <Link

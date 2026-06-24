@@ -17,6 +17,9 @@ export interface Case {
   services: string[]
   caseHomeServices?: { id: string; category: string; code: string; name: string; units: string }[]
   lastHomeVisitDate?: string
+  lastHomeVisitContent?: string
+  lastPhoneVisitDate?: string
+  lastPhoneVisitContent?: string
   shortGoal?: string
   midGoal?: string
   longGoal?: string
