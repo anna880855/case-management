@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useStore } from '@/lib/store'
 
 const NAV = [
@@ -16,7 +16,6 @@ export default function Sidebar() {
   const { cases, settings, setCases, setSentences } = useStore()
   const [syncing, setSyncing] = useState(false)
   const [syncMsg, setSyncMsg] = useState('')
-  const autoSynced = useRef(false)
 
   const handleSync = async (silent = false) => {
     if (!settings.appsScriptUrl) {
@@ -42,14 +41,6 @@ export default function Sidebar() {
       setTimeout(() => setSyncMsg(''), 4000)
     }
   }
-
-  useEffect(() => {
-    if (autoSynced.current) return
-    if (!settings.appsScriptUrl) return
-    autoSynced.current = true
-    handleSync(true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings.appsScriptUrl])
 
   const activeCases = cases.filter(c => c.status === 'active').length
 
