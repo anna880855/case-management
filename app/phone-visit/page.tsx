@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useStore } from '@/lib/store'
 import type { Case, Sentence } from '@/lib/types'
+import { AI_STYLE_GUIDE } from '@/lib/aiStyle'
 
 const CATEGORIES = ['service', 'physical', 'family', 'plan'] as const
 type PhoneCategory = typeof CATEGORIES[number]
@@ -38,6 +39,8 @@ function buildPrompt(
 本次電訪重點（請融入以下各項內容，改寫為流暢的第三人稱段落，不要分條列項）：
 ${sentenceBlock}
 ${customNote ? `\n補充說明（請一併融入）：${customNote}` : ''}
+
+${AI_STYLE_GUIDE}
 
 請依照以下固定格式輸出（直接輸出，不要加任何說明文字，「三、訪談內容」之後的項目請直接照抄下方內容，不要自行改寫或新增）：
 

@@ -118,6 +118,18 @@ function doGet(e) {
       const caseNumber = e.parameter.caseNumber || '';
       deleteCaseRow(caseName, caseNumber);
       result = { deleted: true };
+    } else if (action === 'getDrafts') {
+      const caseNumber = e.parameter.caseNumber || '';
+      result = { drafts: getDrafts(caseNumber) };
+    } else if (action === 'saveDraft') {
+      const record = JSON.parse(e.parameter.record || '{}');
+      saveDraft(record);
+      result = { saved: true };
+    } else if (action === 'deleteDraft') {
+      const caseNumber = e.parameter.caseNumber || '';
+      const ts = e.parameter.ts || '';
+      deleteDraft(caseNumber, ts);
+      result = { deleted: true };
     } else {
       throw new Error('Unknown action: ' + action);
     }
@@ -241,6 +253,50 @@ function deleteCaseRow(caseName, caseNumber) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_NAME) || ss.getSheets()[0];
   sheet.deleteRow(rowIndex);
+}
+
+// ====================================================
+// 家訪草稿（暫存於獨立工作表，不影響個案資料表）
+// ====================================================
+
+const DRAFTS_SHEET_NAME = '家訪草稿';
+const DRAFT_HEADERS = ['caseNumber', 'ts', 'label', 'data'];
+
+function getOrCreateDraftSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(DRAFTS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(DRAFTS_SHEET_NAME);
+    sheet.appendRow(DRAFT_HEADERS);
+  }
+  return sheet;
+}
+
+function getDrafts(caseNumber) {
+  const sheet = getOrCreateDraftSheet();
+  const data = sheet.getDataRange().getValues();
+  if (data.length < 2) return [];
+  return data.slice(1)
+    .filter(function(row) { return String(row[0] || '').trim() === caseNumber; })
+    .map(function(row) {
+      return { caseNumber: String(row[0] || ''), ts: String(row[1] || ''), label: String(row[2] || ''), data: String(row[3] || '') };
+    });
+}
+
+function saveDraft(record) {
+  const sheet = getOrCreateDraftSheet();
+  sheet.appendRow([record.caseNumber || '', record.ts || '', record.label || '', record.data || '']);
+}
+
+function deleteDraft(caseNumber, ts) {
+  const sheet = getOrCreateDraftSheet();
+  const data = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0] || '').trim() === caseNumber && String(data[i][1] || '') === ts) {
+      sheet.deleteRow(i + 1);
+      return;
+    }
+  }
 }
 
 function output(data) {
