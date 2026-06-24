@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from '@/lib/store'
 
 const NAV = [
@@ -11,34 +11,81 @@ const NAV = [
   { href: '/settings', label: '設定', icon: '⚙️' },
 ]
 
+type CloudVisitRecord = { caseId: string; caseNumber: string; caseName: string; date: string; target?: string; content: string }
+
 export default function Sidebar() {
   const pathname = usePathname()
-  const { cases, settings, setCases, setSentences } = useStore()
+  const { cases, settings, setCases, setSentences, importPhoneVisits, importHomeVisits } = useStore()
   const [syncing, setSyncing] = useState(false)
   const [syncMsg, setSyncMsg] = useState('')
+  const autoSynced = useRef(false)
 
-  const handleSync = async () => {
+  const resolveCaseId = (caseNumber: string, caseName: string, currentCases: typeof cases) =>
+    currentCases.find(c => (caseNumber && c.caseNumber === caseNumber) || c.name === caseName)?.id || caseNumber || caseName
+
+  const handleSync = async (silent = false) => {
     if (!settings.appsScriptUrl) {
-      setSyncMsg('請先在設定頁面填入 Apps Script URL')
-      setTimeout(() => setSyncMsg(''), 3000)
+      if (!silent) {
+        setSyncMsg('請先在設定頁面填入 Apps Script URL')
+        setTimeout(() => setSyncMsg(''), 3000)
+      }
       return
     }
     setSyncing(true)
-    setSyncMsg('')
+    if (!silent) setSyncMsg('')
     try {
-      const res = await fetch(`/api/sync?url=${encodeURIComponent(settings.appsScriptUrl)}`)
+      const [res, phoneRes, homeRes] = await Promise.all([
+        fetch(`/api/sync?url=${encodeURIComponent(settings.appsScriptUrl)}`),
+        fetch(`/api/sync-visits?url=${encodeURIComponent(settings.appsScriptUrl)}&sheetName=${encodeURIComponent(settings.phoneVisitSheetName || '電訪紀錄')}`),
+        fetch(`/api/sync-visits?url=${encodeURIComponent(settings.appsScriptUrl)}&sheetName=${encodeURIComponent(settings.homeVisitSheetName || '家訪紀錄')}`),
+      ])
       const data = await res.json()
       if (data.error) throw new Error(data.error)
+      const latestCases = data.cases || cases
       if (data.cases) setCases(data.cases)
       if (data.sentences) setSentences(data.sentences)
-      setSyncMsg(`已同步 ${data.cases?.length || 0} 筆個案`)
+
+      const phoneData = await phoneRes.json()
+      const homeData = await homeRes.json()
+      if (phoneData.ok) {
+        const phoneVisits = (phoneData.records as CloudVisitRecord[]).map((r, i) => ({
+          id: `cloud-${r.caseNumber}-${r.date}-${i}`,
+          caseId: resolveCaseId(r.caseNumber, r.caseName, latestCases),
+          caseName: r.caseName,
+          date: r.date,
+          target: r.target || '',
+          content: r.content,
+          createdAt: new Date().toISOString(),
+        }))
+        importPhoneVisits(phoneVisits)
+      }
+      if (homeData.ok) {
+        const homeVisits = (homeData.records as CloudVisitRecord[]).map((r, i) => ({
+          id: `cloud-${r.caseNumber}-${r.date}-${i}`,
+          caseId: resolveCaseId(r.caseNumber, r.caseName, latestCases),
+          caseName: r.caseName,
+          date: r.date,
+          planContent: r.content,
+          createdAt: new Date().toISOString(),
+        }))
+        importHomeVisits(homeVisits)
+      }
+      setSyncMsg(`已同步 ${data.cases?.length || 0} 筆個案、${phoneData.records?.length || 0} 筆電訪、${homeData.records?.length || 0} 筆家訪`)
     } catch (e: unknown) {
-      setSyncMsg(e instanceof Error ? e.message : '同步失敗')
+      if (!silent) setSyncMsg(e instanceof Error ? e.message : '同步失敗')
     } finally {
       setSyncing(false)
       setTimeout(() => setSyncMsg(''), 4000)
     }
   }
+
+  useEffect(() => {
+    if (autoSynced.current) return
+    if (!settings.appsScriptUrl) return
+    autoSynced.current = true
+    handleSync(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.appsScriptUrl])
 
   const activeCases = cases.filter(c => c.status === 'active').length
 
@@ -70,7 +117,7 @@ export default function Sidebar() {
 
       <div className="p-3 border-t border-white/10 space-y-2">
         <button
-          onClick={handleSync}
+          onClick={() => handleSync(false)}
           disabled={syncing}
           className="w-full flex items-center justify-center gap-2 py-2 bg-[#a3bcaa] hover:bg-[#b4c9bb] disabled:opacity-60 rounded-lg text-sm font-medium transition-colors"
         >
