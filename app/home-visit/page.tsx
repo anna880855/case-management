@@ -297,6 +297,7 @@ function HomeVisitContent() {
   const [savingDraft, setSavingDraft] = useState(false)
   const [showDraftSave, setShowDraftSave] = useState(false)
   const [draftLabel, setDraftLabel] = useState('')
+  const [draftSyncWarning, setDraftSyncWarning] = useState('')
 
   // ── Derived
   const selectedCase = cases.find(c => c.id === selectedCaseId)
@@ -430,26 +431,37 @@ function HomeVisitContent() {
   const handleSaveDraft = async () => {
     if (!selectedCase) return
     setSavingDraft(true)
+    setDraftSyncWarning('')
     const ts = new Date().toISOString()
     const label = draftLabel.trim() || `${date} 草稿`
-    try {
-      await fetch('/api/draft', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          appsScriptUrl: settings.appsScriptUrl,
-          record: {
-            caseNumber: selectedCase.caseNumber || selectedCase.id,
-            caseNumberRef: selectedCase.id,
-            caseNameRef: selectedCase.name,
-            ts,
-            label,
-            data: JSON.stringify(getDraftData()),
-          },
-        }),
-      })
-      setDrafts(prev => [...prev, { caseNumber: selectedCase.caseNumber || selectedCase.id, ts, label, data: JSON.stringify(getDraftData()) }])
-    } catch {}
+    if (!settings.appsScriptUrl) {
+      setDraftSyncWarning('尚未設定 Apps Script URL，此草稿只存在本機瀏覽器，換電腦將無法看到。')
+    } else {
+      try {
+        const res = await fetch('/api/draft', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            appsScriptUrl: settings.appsScriptUrl,
+            record: {
+              caseNumber: selectedCase.caseNumber || selectedCase.id,
+              caseNumberRef: selectedCase.id,
+              caseNameRef: selectedCase.name,
+              ts,
+              label,
+              data: JSON.stringify(getDraftData()),
+            },
+          }),
+        })
+        const data = await res.json()
+        if (!data.synced) {
+          setDraftSyncWarning(`草稿已存在本機，但雲端同步失敗${data.error ? '：' + data.error : ''}。換電腦前請確認此草稿已同步。`)
+        }
+      } catch {
+        setDraftSyncWarning('草稿已存在本機，但雲端同步失敗（網路錯誤）。換電腦前請確認此草稿已同步。')
+      }
+    }
+    setDrafts(prev => [...prev, { caseNumber: selectedCase.caseNumber || selectedCase.id, ts, label, data: JSON.stringify(getDraftData()) }])
     setSavingDraft(false)
     setShowDraftSave(false)
     setDraftLabel('')
@@ -933,6 +945,10 @@ ${problemSection}
                     </button>
                   </div>
                 </div>
+              )}
+
+              {draftSyncWarning && (
+                <p className="text-xs text-amber-600 mb-3">⚠ {draftSyncWarning}</p>
               )}
 
               {draftLoading && <p className="text-xs text-gray-400">載入草稿中...</p>}
