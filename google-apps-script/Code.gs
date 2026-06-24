@@ -65,8 +65,6 @@ const FIELD_MAP = {
   // 備註
   '備註': 'notes', '備註1': 'notes', '注意事項': 'notes', '備注': 'notes',
   '說明': 'notes', '特殊狀況': 'notes', '其他': 'notes',
-  // 電訪對象
-  '電訪對象': 'visitTarget', '訪視對象': 'visitTarget',
   // 最近家訪日
   '最近家訪日': 'lastHomeVisitDate', '最近家訪日期': 'lastHomeVisitDate', '上次家訪日': 'lastHomeVisitDate',
   // 負責社工

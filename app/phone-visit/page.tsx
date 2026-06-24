@@ -53,22 +53,6 @@ ${PLAN_LABELS.respite}：${planBlock.respite}
 ${PLAN_LABELS.referral}：${planBlock.referral}`
 }
 
-function parseVisitTarget(raw: string): string {
-  if (!raw) return ''
-  try {
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed)) {
-      return parsed.map((p: { name?: string; relation?: string }) =>
-        p.relation ? `${p.name}（${p.relation}）` : p.name || ''
-      ).filter(Boolean).join('、')
-    }
-    if (typeof parsed === 'object' && parsed.name) {
-      return parsed.relation ? `${parsed.name}（${parsed.relation}）` : parsed.name
-    }
-  } catch {}
-  return raw
-}
-
 const PLAN_KEYS = ['care', 'transport', 'aids', 'respite', 'referral'] as const
 type PlanKey = typeof PLAN_KEYS[number]
 const PLAN_LABELS: Record<PlanKey, string> = {
@@ -223,7 +207,7 @@ function PhoneVisitContent() {
     setCaseSearch('')
     setGenerated('')
     setSaved(false)
-    setTarget(prevTarget || parseVisitTarget(c?.visitTarget || '') || c?.guardian || '')
+    setTarget(prevTarget || c?.guardian || '')
     setPlanBlock(prevVisits.length > 0 ? parsePlanBlock(prevVisits[0].content) : { ...PLAN_DEFAULTS })
     setGoalTracking(prevVisits.length > 0 ? parseGoalBlock(prevVisits[0].content) : { ...EMPTY_GOAL_TRACKING })
     autoSelect(c)
