@@ -9,25 +9,31 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    let url: string
+    let params: Record<string, string>
 
     if (action === 'createCase') {
       const { fields } = body
-      url = `${appsScriptUrl}?action=createCase&fields=${encodeURIComponent(JSON.stringify(fields))}`
+      params = { action: 'createCase', fields: JSON.stringify(fields) }
     } else if (action === 'updateCase') {
       const { caseName, caseNumber, fields } = body
-      url = `${appsScriptUrl}?action=updateCase&caseName=${encodeURIComponent(caseName)}&caseNumber=${encodeURIComponent(caseNumber || '')}&fields=${encodeURIComponent(JSON.stringify(fields))}`
+      params = { action: 'updateCase', caseName, caseNumber: caseNumber || '', fields: JSON.stringify(fields) }
     } else if (action === 'updateStatus') {
       const { caseName, caseNumber, status } = body
-      url = `${appsScriptUrl}?action=updateStatus&caseName=${encodeURIComponent(caseName)}&caseNumber=${encodeURIComponent(caseNumber || '')}&status=${encodeURIComponent(status)}`
+      params = { action: 'updateStatus', caseName, caseNumber: caseNumber || '', status }
     } else if (action === 'deleteCase') {
       const { caseName, caseNumber } = body
-      url = `${appsScriptUrl}?action=deleteCase&caseName=${encodeURIComponent(caseName)}&caseNumber=${encodeURIComponent(caseNumber || '')}`
+      params = { action: 'deleteCase', caseName, caseNumber: caseNumber || '' }
     } else {
       return NextResponse.json({ ok: false, error: 'unknown action' }, { status: 400 })
     }
 
-    const res = await fetch(url, { redirect: 'follow', cache: 'no-store' })
+    const res = await fetch(appsScriptUrl, {
+      method: 'POST',
+      redirect: 'follow',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(params).toString(),
+    })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const json = await res.json()
     if (!json.ok) throw new Error(json.error || 'Apps Script 回傳錯誤')
