@@ -58,7 +58,7 @@ function useVisitStatus(c: Case) {
 const EMPTY_FORM = {
   name: '', caseNumber: '', phone: '', address: '',
   careLevel: '', guardian: '', guardianPhone: '',
-  birthDate: '', disability: '', notes: '',
+  birthDate: '', disability: '', disabilityExpiry: '', idNumber: '', gender: '', notes: '',
   status: 'active' as Case['status'],
 }
 
@@ -83,9 +83,47 @@ function NewCaseModal({ onClose }: { onClose: () => void }) {
   const [saving, setSaving] = useState(false)
   const [syncError, setSyncError] = useState('')
   const [pendingCase, setPendingCase] = useState<Case | null>(null)
+  const [parsing, setParsing] = useState(false)
+  const [parseError, setParseError] = useState('')
 
   const set = (field: string, value: string) =>
     setForm(prev => ({ ...prev, [field]: value }))
+
+  const handlePdfUpload = async (file: File) => {
+    if (!settings.claudeApiKey) { setParseError('請先在「設定」頁面填入 Claude API Key'); return }
+    setParsing(true)
+    setParseError('')
+    try {
+      const buffer = await file.arrayBuffer()
+      const base64 = Buffer.from(buffer).toString('base64')
+      const res = await fetch('/api/parse-case-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: settings.claudeApiKey, base64 }),
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setForm(prev => ({
+        ...prev,
+        name: data.fields.name || prev.name,
+        idNumber: data.fields.idNumber || prev.idNumber,
+        phone: data.fields.phone || prev.phone,
+        address: data.fields.address || prev.address,
+        birthDate: data.fields.birthDate || prev.birthDate,
+        gender: data.fields.gender || prev.gender,
+        careLevel: data.fields.careLevel || prev.careLevel,
+        disability: data.fields.disability || prev.disability,
+        disabilityExpiry: data.fields.disabilityExpiry || prev.disabilityExpiry,
+        guardian: data.fields.guardian || prev.guardian,
+        guardianPhone: data.fields.guardianPhone || prev.guardianPhone,
+        notes: data.fields.notes || prev.notes,
+      }))
+    } catch (e: unknown) {
+      setParseError(e instanceof Error ? e.message : 'PDF 解析失敗')
+    } finally {
+      setParsing(false)
+    }
+  }
 
   const handleSubmit = async () => {
     if (!pendingCase && !form.name.trim()) return
@@ -98,11 +136,12 @@ function NewCaseModal({ onClose }: { onClose: () => void }) {
       phone: form.phone.trim(),
       address: form.address.trim(),
       birthDate: form.birthDate,
-      idNumber: '',
-      gender: '',
+      idNumber: form.idNumber.trim(),
+      gender: form.gender.trim(),
       status: form.status,
       careLevel: form.careLevel.trim(),
       disability: form.disability.trim(),
+      disabilityExpiry: form.disabilityExpiry.trim(),
       guardian: form.guardian.trim(),
       guardianPhone: form.guardianPhone.trim(),
       notes: form.notes.trim(),
@@ -148,6 +187,22 @@ function NewCaseModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="px-6 py-5 space-y-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <label className="block text-xs font-medium text-gray-600 mb-2">📄 上傳照管中心評估量表 PDF，自動填寫個案資料</label>
+            <input
+              type="file"
+              accept="application/pdf"
+              disabled={parsing}
+              onChange={e => {
+                const file = e.target.files?.[0]
+                if (file) handlePdfUpload(file)
+                e.target.value = ''
+              }}
+              className="block w-full text-xs text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-[#7a9985] file:text-white hover:file:bg-[#6b8a76] file:cursor-pointer disabled:opacity-50"
+            />
+            {parsing && <p className="text-xs text-gray-500 mt-2">解析中，請稍候...</p>}
+            {parseError && <p className="text-xs text-red-500 mt-2">⚠ {parseError}</p>}
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
               <label className="block text-xs font-medium text-gray-600 mb-1">姓名 <span className="text-red-400">*</span></label>
@@ -173,6 +228,19 @@ function NewCaseModal({ onClose }: { onClose: () => void }) {
                 <option value="closed">結案</option>
               </select>
             </div>
+            <Field label="身分證字號" field="idNumber" value={form.idNumber} onChange={set} placeholder="選填" />
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">性別</label>
+              <select
+                value={form.gender}
+                onChange={e => set('gender', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
+              >
+                <option value="">未填</option>
+                <option value="男">男</option>
+                <option value="女">女</option>
+              </select>
+            </div>
             <Field label="電話" field="phone" value={form.phone} onChange={set} placeholder="選填" />
             <Field label="生日" field="birthDate" value={form.birthDate} onChange={set} type="date" />
             <div className="col-span-2">
@@ -180,6 +248,7 @@ function NewCaseModal({ onClose }: { onClose: () => void }) {
             </div>
             <Field label="照顧等級" field="careLevel" value={form.careLevel} onChange={set} placeholder="例：第三級" />
             <Field label="身心障礙" field="disability" value={form.disability} onChange={set} placeholder="選填" />
+            <Field label="身障重新鑑定日" field="disabilityExpiry" value={form.disabilityExpiry} onChange={set} type="date" />
             <Field label="主要照顧者" field="guardian" value={form.guardian} onChange={set} placeholder="選填" />
             <Field label="照顧者電話" field="guardianPhone" value={form.guardianPhone} onChange={set} placeholder="選填" />
             <div className="col-span-2">
