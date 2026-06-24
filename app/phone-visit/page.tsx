@@ -316,40 +316,20 @@ ${PLAN_LABELS.referral}：${planBlock.referral}`)
     setError('')
     if (settings.appsScriptUrl) {
       try {
-        const [res, caseRes] = await Promise.all([
-          fetch('/api/save-visit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              appsScriptUrl: settings.appsScriptUrl,
-              sheetName: settings.phoneVisitSheetName || '電訪紀錄',
-              record: {
-                caseId: selectedCase.caseNumber || selectedCase.id,
-                date: `${date} ${time}`,
-                caseNumber: selectedCase.caseNumber || '',
-                caseName: selectedCase.name,
-                method: '電訪',
-                target: visit.target,
-                content: generated,
-              },
-            }),
+        const caseRes = await fetch('/api/update-case', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            appsScriptUrl: settings.appsScriptUrl,
+            action: 'updateCase',
+            caseName: selectedCase.name,
+            caseNumber: selectedCase.caseNumber,
+            fields: { lastPhoneVisitDate: `${date} ${time}`, lastPhoneVisitContent: generated },
           }),
-          fetch('/api/update-case', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              appsScriptUrl: settings.appsScriptUrl,
-              action: 'updateCase',
-              caseName: selectedCase.name,
-              caseNumber: selectedCase.caseNumber,
-              fields: { lastPhoneVisitDate: `${date} ${time}`, lastPhoneVisitContent: generated },
-            }),
-          }),
-        ])
-        const data = await res.json()
+        })
         const caseData = await caseRes.json()
-        if (!data.synced || !caseData.synced) {
-          setError(`已儲存在本機，但雲端同步失敗${data.error || caseData.error ? '：' + (data.error || caseData.error) : ''}。換電腦前請確認此筆紀錄已同步。`)
+        if (!caseData.synced) {
+          setError(`已儲存在本機，但雲端同步失敗${caseData.error ? '：' + caseData.error : ''}。換電腦前請確認此筆紀錄已同步。`)
         }
       } catch {
         setError('已儲存在本機，但雲端同步失敗（網路錯誤）。換電腦前請確認此筆紀錄已同步。')

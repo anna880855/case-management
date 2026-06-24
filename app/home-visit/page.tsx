@@ -707,33 +707,7 @@ ${problemSection}
     setSaved(true)
     setSyncWarning('')
     if (settings.appsScriptUrl) {
-      try {
-        const res = await fetch('/api/save-visit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            appsScriptUrl: settings.appsScriptUrl,
-            sheetName: settings.homeVisitSheetName || '家訪紀錄',
-            record: {
-              caseId: selectedCase.caseNumber || selectedCase.id,
-              date,
-              caseNumber: selectedCase.caseNumber || '',
-              caseName: selectedCase.name,
-              method: '家訪',
-              target: '',
-              content: finalDoc,
-            },
-          }),
-        })
-        const data = await res.json()
-        if (!data.synced) {
-          setSyncWarning(`已儲存在本機，但雲端同步失敗${data.error ? '：' + data.error : ''}。請檢查網路或 Apps Script 設定後重新整理頁面再試。${caseUpdateWarning}`)
-        } else if (caseUpdateWarning) {
-          setSyncWarning(caseUpdateWarning)
-        }
-      } catch {
-        setSyncWarning(`已儲存在本機，但雲端同步失敗（網路錯誤）。換電腦前請確認此筆紀錄已同步。${caseUpdateWarning}`)
-      }
+      if (caseUpdateWarning) setSyncWarning(caseUpdateWarning)
     } else {
       setSyncWarning('尚未設定 Apps Script URL，此筆紀錄只存在本機瀏覽器，換電腦將無法看到。請至「系統設定」設定後重新儲存。')
     }

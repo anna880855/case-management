@@ -3,14 +3,12 @@ import { useState } from 'react'
 import { useStore, DEFAULT_SENTENCES } from '@/lib/store'
 
 export default function SettingsPage() {
-  const { settings, updateSettings, sentences, addSentence, deleteSentence, setSentences, importPhoneVisits, importHomeVisits, cases } = useStore()
+  const { settings, updateSettings, sentences, addSentence, deleteSentence, setSentences } = useStore()
   const [saved, setSaved] = useState(false)
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState('')
   const [newSentence, setNewSentence] = useState({ category: '', text: '' })
   const [resetDone, setResetDone] = useState(false)
-  const [syncingVisits, setSyncingVisits] = useState(false)
-  const [visitSyncResult, setVisitSyncResult] = useState('')
 
   const categories = Array.from(new Set(sentences.map(s => s.category)))
 
@@ -42,55 +40,6 @@ export default function SettingsPage() {
       setTestResult('✗ ' + (e instanceof Error ? e.message : '連線失敗'))
     } finally {
       setTesting(false)
-    }
-  }
-
-  const resolveCaseId = (caseNumber: string, caseName: string) =>
-    cases.find(c => (caseNumber && c.caseNumber === caseNumber) || c.name === caseName)?.id || caseNumber || caseName
-
-  const handleSyncVisits = async () => {
-    if (!settings.appsScriptUrl) {
-      setVisitSyncResult('請先填入 Apps Script URL')
-      return
-    }
-    setSyncingVisits(true)
-    setVisitSyncResult('')
-    try {
-      const [phoneRes, homeRes] = await Promise.all([
-        fetch(`/api/sync-visits?url=${encodeURIComponent(settings.appsScriptUrl)}&sheetName=${encodeURIComponent(settings.phoneVisitSheetName || '電訪紀錄')}`),
-        fetch(`/api/sync-visits?url=${encodeURIComponent(settings.appsScriptUrl)}&sheetName=${encodeURIComponent(settings.homeVisitSheetName || '家訪紀錄')}`),
-      ])
-      const phoneData = await phoneRes.json()
-      const homeData = await homeRes.json()
-      if (!phoneData.ok) throw new Error(phoneData.error || '電訪紀錄同步失敗')
-      if (!homeData.ok) throw new Error(homeData.error || '家訪紀錄同步失敗')
-
-      type CloudRecord = { caseId: string; caseNumber: string; caseName: string; date: string; target?: string; content: string }
-
-      const phoneVisits = (phoneData.records as CloudRecord[]).map((r, i) => ({
-        id: `cloud-${r.caseNumber}-${r.date}-${i}`,
-        caseId: resolveCaseId(r.caseNumber, r.caseName),
-        caseName: r.caseName,
-        date: r.date,
-        target: r.target || '',
-        content: r.content,
-        createdAt: new Date().toISOString(),
-      }))
-      const homeVisits = (homeData.records as CloudRecord[]).map((r, i) => ({
-        id: `cloud-${r.caseNumber}-${r.date}-${i}`,
-        caseId: resolveCaseId(r.caseNumber, r.caseName),
-        caseName: r.caseName,
-        date: r.date,
-        planContent: r.content,
-        createdAt: new Date().toISOString(),
-      }))
-      importPhoneVisits(phoneVisits)
-      importHomeVisits(homeVisits)
-      setVisitSyncResult(`✓ 已同步 ${phoneVisits.length} 筆電訪紀錄、${homeVisits.length} 筆家訪紀錄`)
-    } catch (e: unknown) {
-      setVisitSyncResult('✗ ' + (e instanceof Error ? e.message : '同步失敗'))
-    } finally {
-      setSyncingVisits(false)
     }
   }
 
@@ -192,45 +141,6 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Visit Sheet Names */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 mb-5">
-        <h3 className="font-semibold text-gray-700 mb-1">訪視紀錄分頁名稱</h3>
-        <p className="text-xs text-gray-400 mb-3">指定 Google Sheet 中電訪與家訪紀錄的工作表分頁名稱（需與 Sheet 分頁名稱完全相同）</p>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">電訪紀錄分頁</label>
-            <input
-              type="text"
-              value={settings.phoneVisitSheetName || '電訪紀錄'}
-              onChange={e => updateSettings({ phoneVisitSheetName: e.target.value })}
-              placeholder="電訪紀錄"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">家訪紀錄分頁</label>
-            <input
-              type="text"
-              value={settings.homeVisitSheetName || '家訪紀錄'}
-              onChange={e => updateSettings({ homeVisitSheetName: e.target.value })}
-              placeholder="家訪紀錄"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#a3bcaa]"
-            />
-          </div>
-        </div>
-        <button
-          onClick={handleSyncVisits}
-          disabled={syncingVisits}
-          className="mt-4 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm transition-colors whitespace-nowrap"
-        >
-          {syncingVisits ? '同步中...' : '☁️ 從雲端同步電訪／家訪紀錄（換電腦後請按此）'}
-        </button>
-        {visitSyncResult && (
-          <p className={`text-sm mt-2 ${visitSyncResult.startsWith('✓') ? 'text-green-600' : 'text-red-500'}`}>
-            {visitSyncResult}
-          </p>
-        )}
-      </div>
 
       {/* Claude API Key */}
       <div className="bg-white rounded-xl border border-gray-100 p-6 mb-5">
