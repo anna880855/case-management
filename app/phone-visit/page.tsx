@@ -53,22 +53,6 @@ ${PLAN_LABELS.respite}：${planBlock.respite}
 ${PLAN_LABELS.referral}：${planBlock.referral}`
 }
 
-function parseVisitTarget(raw: string): string {
-  if (!raw) return ''
-  try {
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed)) {
-      return parsed.map((p: { name?: string; relation?: string }) =>
-        p.relation ? `${p.name}（${p.relation}）` : p.name || ''
-      ).filter(Boolean).join('、')
-    }
-    if (typeof parsed === 'object' && parsed.name) {
-      return parsed.relation ? `${parsed.name}（${parsed.relation}）` : parsed.name
-    }
-  } catch {}
-  return raw
-}
-
 const PLAN_KEYS = ['care', 'transport', 'aids', 'respite', 'referral'] as const
 type PlanKey = typeof PLAN_KEYS[number]
 const PLAN_LABELS: Record<PlanKey, string> = {
@@ -130,7 +114,7 @@ function parseGoalBlock(content: string): Record<GoalKey, { status: string; perc
 
 function PhoneVisitContent() {
   const searchParams = useSearchParams()
-  const { cases, sentences, settings, addPhoneVisit, getPhoneVisitsByCase } = useStore()
+  const { cases, sentences, settings, addPhoneVisit, getPhoneVisitsByCase, updateCase } = useStore()
 
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
@@ -223,7 +207,7 @@ function PhoneVisitContent() {
     setCaseSearch('')
     setGenerated('')
     setSaved(false)
-    setTarget(prevTarget || parseVisitTarget(c?.visitTarget || '') || c?.guardian || '')
+    setTarget(prevTarget || c?.guardian || '')
     setPlanBlock(prevVisits.length > 0 ? parsePlanBlock(prevVisits[0].content) : { ...PLAN_DEFAULTS })
     setGoalTracking(prevVisits.length > 0 ? parseGoalBlock(prevVisits[0].content) : { ...EMPTY_GOAL_TRACKING })
     autoSelect(c)
@@ -327,30 +311,45 @@ ${PLAN_LABELS.referral}：${planBlock.referral}`)
       createdAt: new Date().toISOString(),
     }
     addPhoneVisit(visit)
+    updateCase(selectedCase.id, { lastPhoneVisitDate: `${date} ${time}`, lastPhoneVisitContent: generated })
     setSaved(true)
     setError('')
     if (settings.appsScriptUrl) {
       try {
-        const res = await fetch('/api/save-visit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            appsScriptUrl: settings.appsScriptUrl,
-            sheetName: settings.phoneVisitSheetName || '電訪紀錄',
-            record: {
-              caseId: selectedCase.caseNumber || selectedCase.id,
-              date: `${date} ${time}`,
-              caseNumber: selectedCase.caseNumber || '',
-              caseName: selectedCase.name,
-              method: '電訪',
-              target: visit.target,
-              content: generated,
-            },
+        const [res, caseRes] = await Promise.all([
+          fetch('/api/save-visit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              appsScriptUrl: settings.appsScriptUrl,
+              sheetName: settings.phoneVisitSheetName || '電訪紀錄',
+              record: {
+                caseId: selectedCase.caseNumber || selectedCase.id,
+                date: `${date} ${time}`,
+                caseNumber: selectedCase.caseNumber || '',
+                caseName: selectedCase.name,
+                method: '電訪',
+                target: visit.target,
+                content: generated,
+              },
+            }),
           }),
-        })
+          fetch('/api/update-case', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              appsScriptUrl: settings.appsScriptUrl,
+              action: 'updateCase',
+              caseName: selectedCase.name,
+              caseNumber: selectedCase.caseNumber,
+              fields: { lastPhoneVisitDate: `${date} ${time}`, lastPhoneVisitContent: generated },
+            }),
+          }),
+        ])
         const data = await res.json()
-        if (!data.synced) {
-          setError(`已儲存在本機，但雲端同步失敗${data.error ? '：' + data.error : ''}。換電腦前請確認此筆紀錄已同步。`)
+        const caseData = await caseRes.json()
+        if (!data.synced || !caseData.synced) {
+          setError(`已儲存在本機，但雲端同步失敗${data.error || caseData.error ? '：' + (data.error || caseData.error) : ''}。換電腦前請確認此筆紀錄已同步。`)
         }
       } catch {
         setError('已儲存在本機，但雲端同步失敗（網路錯誤）。換電腦前請確認此筆紀錄已同步。')

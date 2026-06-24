@@ -15,9 +15,11 @@ export interface Case {
   guardianPhone: string
   notes: string
   services: string[]
-  visitTarget?: string
   caseHomeServices?: { id: string; category: string; code: string; name: string; units: string }[]
   lastHomeVisitDate?: string
+  lastHomeVisitContent?: string
+  lastPhoneVisitDate?: string
+  lastPhoneVisitContent?: string
   shortGoal?: string
   midGoal?: string
   longGoal?: string

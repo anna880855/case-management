@@ -661,7 +661,7 @@ ${problemSection}
       planContent: finalDoc,
       createdAt: new Date().toISOString(),
     })
-    const caseUpdate: Parameters<typeof updateCase>[1] = {}
+    const caseUpdate: Parameters<typeof updateCase>[1] = { lastHomeVisitDate: date, lastHomeVisitContent: finalDoc }
     if (careGoals.short || careGoals.mid || careGoals.long) {
       caseUpdate.shortGoal = careGoals.short
       caseUpdate.midGoal = careGoals.mid

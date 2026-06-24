@@ -55,7 +55,6 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
       disabilityExpiry: c.disabilityExpiry || '',
       guardian: c.guardian,
       guardianPhone: c.guardianPhone,
-      visitTarget: c.visitTarget || '',
       lastHomeVisitDate: c.lastHomeVisitDate || '',
       notes: c.notes,
       shortGoal: c.shortGoal || '',
@@ -219,7 +218,6 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
               <EditField label="身障類別" value={ef.disability || ''} onChange={v => setEditFields(p => ({ ...p, disability: v }))} />
               <EditField label="身障期限" value={ef.disabilityExpiry || ''} onChange={v => setEditFields(p => ({ ...p, disabilityExpiry: v }))} />
               <EditField label="照顧等級" value={ef.careLevel || ''} onChange={v => setEditFields(p => ({ ...p, careLevel: v }))} />
-              <EditField label="電訪對象" value={ef.visitTarget || ''} onChange={v => setEditFields(p => ({ ...p, visitTarget: v }))} />
               <EditField label="主要照顧者" value={ef.guardian || ''} onChange={v => setEditFields(p => ({ ...p, guardian: v }))} />
               <EditField label="照顧者電話" value={ef.guardianPhone || ''} onChange={v => setEditFields(p => ({ ...p, guardianPhone: v }))} />
               <EditField label="最近家訪日" value={ef.lastHomeVisitDate || ''} onChange={v => setEditFields(p => ({ ...p, lastHomeVisitDate: v }))} />
@@ -288,7 +286,6 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
               <dl className="space-y-2.5">
                 <InfoRow label="身障類別" value={c.disability} />
                 <InfoRow label="身障期限" value={c.disabilityExpiry} />
-                <InfoRow label="電訪對象" value={c.visitTarget} />
                 <InfoRow label="主要照顧者" value={c.guardian} />
                 <InfoRow label="照顧者電話" value={c.guardianPhone} />
                 <InfoRow label="最近家訪日" value={c.lastHomeVisitDate} />
@@ -352,11 +349,23 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
       <div className="grid grid-cols-2 gap-4 mb-6">
         <VisitHistory
           title="電訪紀錄"
-          visits={phoneVisits.map(v => ({ id: v.id, date: v.date, preview: v.content }))}
+          visits={
+            phoneVisits.length > 0
+              ? phoneVisits.map(v => ({ id: v.id, date: v.date, preview: v.content }))
+              : c.lastPhoneVisitContent
+                ? [{ id: 'latest', date: c.lastPhoneVisitDate || '', preview: c.lastPhoneVisitContent }]
+                : []
+          }
         />
         <VisitHistory
           title="家訪紀錄"
-          visits={homeVisits.map(v => ({ id: v.id, date: v.date, preview: v.planContent }))}
+          visits={
+            homeVisits.length > 0
+              ? homeVisits.map(v => ({ id: v.id, date: v.date, preview: v.planContent }))
+              : c.lastHomeVisitContent
+                ? [{ id: 'latest', date: c.lastHomeVisitDate || '', preview: c.lastHomeVisitContent }]
+                : []
+          }
         />
       </div>
 

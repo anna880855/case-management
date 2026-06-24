@@ -65,10 +65,13 @@ const FIELD_MAP = {
   // 備註
   '備註': 'notes', '備註1': 'notes', '注意事項': 'notes', '備注': 'notes',
   '說明': 'notes', '特殊狀況': 'notes', '其他': 'notes',
-  // 電訪對象
-  '電訪對象': 'visitTarget', '訪視對象': 'visitTarget',
   // 最近家訪日
   '最近家訪日': 'lastHomeVisitDate', '最近家訪日期': 'lastHomeVisitDate', '上次家訪日': 'lastHomeVisitDate',
+  // 最新一筆電訪記錄
+  '最新電訪日': 'lastPhoneVisitDate', '最近電訪日': 'lastPhoneVisitDate', '上次電訪日': 'lastPhoneVisitDate',
+  '最新電訪記錄': 'lastPhoneVisitContent', '最新電訪內容': 'lastPhoneVisitContent', '最近電訪記錄': 'lastPhoneVisitContent',
+  // 最新一筆家訪記錄
+  '最新家訪記錄': 'lastHomeVisitContent', '最新家訪內容': 'lastHomeVisitContent', '最近家訪記錄': 'lastHomeVisitContent',
   // 負責社工
   '負責社工': 'responsibleWorker', '社工': 'responsibleWorker', '個管師': 'responsibleWorker',
 };
@@ -136,15 +139,22 @@ function getCases() {
 
   const headers = data[0].map(function(h) { return String(h).trim(); });
   const rows = data.slice(1);
+  const nameColIdx = headers.findIndex(function(h) { return FIELD_MAP[h] === 'name'; });
+  const numColIdx = headers.findIndex(function(h) { return FIELD_MAP[h] === 'caseNumber'; });
 
   return rows
-    .filter(function(row) { return row[0] && String(row[0]).trim(); })
-    .map(function(row, idx) {
-      const obj = { id: String(idx + 1), status: 'active', services: [] };
+    .map(function(row) {
+      const rowName = nameColIdx >= 0 ? String(row[nameColIdx] || '').trim() : '';
+      const rowNum = numColIdx >= 0 ? String(row[numColIdx] || '').trim() : '';
+      return { row: row, rowName: rowName, rowNum: rowNum };
+    })
+    .filter(function(r) { return r.rowName || r.rowNum; })
+    .map(function(r) {
+      const obj = { id: r.rowNum || r.rowName, status: 'active', services: [] };
       headers.forEach(function(h, i) {
         const field = FIELD_MAP[h];
         if (!field) return;
-        const val = String(row[i] !== null && row[i] !== undefined ? row[i] : '').trim();
+        const val = String(r.row[i] !== null && r.row[i] !== undefined ? r.row[i] : '').trim();
         if (field === 'status') {
           obj.status = STATUS_MAP[val] || 'active';
         } else if (field === 'services') {
