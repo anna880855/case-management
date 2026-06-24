@@ -87,6 +87,10 @@ const STATUS_MAP = {
 
 const STATUS_REVERSE = { 'active': '在案', 'suspended': '暫停', 'closed': '結案' };
 
+function doPost(e) {
+  return doGet(e);
+}
+
 function doGet(e) {
   const action = (e && e.parameter && e.parameter.action) || 'getCasesOnly';
   try {
