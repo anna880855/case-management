@@ -26,6 +26,8 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
   const [editing, setEditing] = useState(false)
   const [editFields, setEditFields] = useState<Partial<Case>>({})
   const [saving, setSaving] = useState(false)
+  const [parsing, setParsing] = useState(false)
+  const [parseError, setParseError] = useState('')
 
   if (!mounted) return <div className="text-center py-20 text-gray-400 text-sm">載入中...</div>
 
@@ -64,6 +66,42 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
       services: c.services || [],
     })
     setEditing(true)
+  }
+
+  const handlePdfUpload = async (file: File) => {
+    if (!settings.claudeApiKey) { setParseError('請先在「設定」頁面填入 Claude API Key'); return }
+    setParsing(true)
+    setParseError('')
+    try {
+      const buffer = await file.arrayBuffer()
+      const base64 = Buffer.from(buffer).toString('base64')
+      const res = await fetch('/api/parse-case-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: settings.claudeApiKey, base64 }),
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setEditFields(prev => ({
+        ...prev,
+        name: data.fields.name || prev.name,
+        idNumber: data.fields.idNumber || prev.idNumber,
+        phone: data.fields.phone || prev.phone,
+        address: data.fields.address || prev.address,
+        birthDate: data.fields.birthDate || prev.birthDate,
+        gender: data.fields.gender || prev.gender,
+        careLevel: data.fields.careLevel || prev.careLevel,
+        disability: data.fields.disability || prev.disability,
+        disabilityExpiry: data.fields.disabilityExpiry || prev.disabilityExpiry,
+        guardian: data.fields.guardian || prev.guardian,
+        guardianPhone: data.fields.guardianPhone || prev.guardianPhone,
+        notes: data.fields.notes || prev.notes,
+      }))
+    } catch (e: unknown) {
+      setParseError(e instanceof Error ? e.message : 'PDF 解析失敗')
+    } finally {
+      setParsing(false)
+    }
   }
 
   const handleEditSave = async () => {
@@ -201,6 +239,24 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
               </button>
             </div>
           </div>
+
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+            <label className="block text-xs font-medium text-gray-600 mb-2">📄 上傳照管中心評估量表 PDF，自動更新個案資料</label>
+            <input
+              type="file"
+              accept="application/pdf"
+              disabled={parsing}
+              onChange={e => {
+                const file = e.target.files?.[0]
+                if (file) handlePdfUpload(file)
+                e.target.value = ''
+              }}
+              className="block w-full text-xs text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-[#7a9985] file:text-white hover:file:bg-[#6b8a76] file:cursor-pointer disabled:opacity-50"
+            />
+            {parsing && <p className="text-xs text-gray-500 mt-2">解析中，請稍候...</p>}
+            {parseError && <p className="text-xs text-red-500 mt-2">⚠ {parseError}</p>}
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-3">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">基本資料</p>
