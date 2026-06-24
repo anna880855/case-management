@@ -11,17 +11,12 @@ const NAV = [
   { href: '/settings', label: '設定', icon: '⚙️' },
 ]
 
-type CloudVisitRecord = { caseId: string; caseNumber: string; caseName: string; date: string; target?: string; content: string }
-
 export default function Sidebar() {
   const pathname = usePathname()
-  const { cases, settings, setCases, setSentences, importPhoneVisits, importHomeVisits } = useStore()
+  const { cases, settings, setCases, setSentences } = useStore()
   const [syncing, setSyncing] = useState(false)
   const [syncMsg, setSyncMsg] = useState('')
   const autoSynced = useRef(false)
-
-  const resolveCaseId = (caseNumber: string, caseName: string, currentCases: typeof cases) =>
-    currentCases.find(c => (caseNumber && c.caseNumber === caseNumber) || c.name === caseName)?.id || caseNumber || caseName
 
   const handleSync = async (silent = false) => {
     if (!settings.appsScriptUrl) {
@@ -34,43 +29,12 @@ export default function Sidebar() {
     setSyncing(true)
     if (!silent) setSyncMsg('')
     try {
-      const [res, phoneRes, homeRes] = await Promise.all([
-        fetch(`/api/sync?url=${encodeURIComponent(settings.appsScriptUrl)}`),
-        fetch(`/api/sync-visits?url=${encodeURIComponent(settings.appsScriptUrl)}&sheetName=${encodeURIComponent(settings.phoneVisitSheetName || '電訪紀錄')}`),
-        fetch(`/api/sync-visits?url=${encodeURIComponent(settings.appsScriptUrl)}&sheetName=${encodeURIComponent(settings.homeVisitSheetName || '家訪紀錄')}`),
-      ])
+      const res = await fetch(`/api/sync?url=${encodeURIComponent(settings.appsScriptUrl)}`)
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      const latestCases = data.cases || cases
       if (data.cases) setCases(data.cases)
       if (data.sentences) setSentences(data.sentences)
-
-      const phoneData = await phoneRes.json()
-      const homeData = await homeRes.json()
-      if (phoneData.ok) {
-        const phoneVisits = (phoneData.records as CloudVisitRecord[]).map((r, i) => ({
-          id: `cloud-${r.caseNumber}-${r.date}-${i}`,
-          caseId: resolveCaseId(r.caseNumber, r.caseName, latestCases),
-          caseName: r.caseName,
-          date: r.date,
-          target: r.target || '',
-          content: r.content,
-          createdAt: new Date().toISOString(),
-        }))
-        importPhoneVisits(phoneVisits)
-      }
-      if (homeData.ok) {
-        const homeVisits = (homeData.records as CloudVisitRecord[]).map((r, i) => ({
-          id: `cloud-${r.caseNumber}-${r.date}-${i}`,
-          caseId: resolveCaseId(r.caseNumber, r.caseName, latestCases),
-          caseName: r.caseName,
-          date: r.date,
-          planContent: r.content,
-          createdAt: new Date().toISOString(),
-        }))
-        importHomeVisits(homeVisits)
-      }
-      setSyncMsg(`已同步 ${data.cases?.length || 0} 筆個案、${phoneData.records?.length || 0} 筆電訪、${homeData.records?.length || 0} 筆家訪`)
+      setSyncMsg(`已同步 ${data.cases?.length || 0} 筆個案`)
     } catch (e: unknown) {
       if (!silent) setSyncMsg(e instanceof Error ? e.message : '同步失敗')
     } finally {

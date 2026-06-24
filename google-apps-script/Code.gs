@@ -114,14 +114,6 @@ function doGet(e) {
       const caseNumber = e.parameter.caseNumber || '';
       deleteCaseRow(caseName, caseNumber);
       result = { deleted: true };
-    } else if (action === 'saveVisitRecord') {
-      const sheetName = e.parameter.sheetName || '';
-      const record = JSON.parse(e.parameter.record || '{}');
-      saveVisitRecord(sheetName, record);
-      result = { saved: true };
-    } else if (action === 'getVisitRecords') {
-      const sheetName = e.parameter.sheetName || '';
-      result = { records: getVisitRecords(sheetName) };
     } else {
       throw new Error('Unknown action: ' + action);
     }
@@ -245,47 +237,6 @@ function deleteCaseRow(caseName, caseNumber) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_NAME) || ss.getSheets()[0];
   sheet.deleteRow(rowIndex);
-}
-
-// 訪視紀錄欄位（電訪／家訪共用）
-const VISIT_HEADERS = ['caseId', 'caseNumber', 'caseName', 'date', 'method', 'target', 'content'];
-
-// 取得（或建立）指定分頁，並確保有標題列
-function getOrCreateVisitSheet(sheetName) {
-  if (!sheetName) throw new Error('缺少分頁名稱');
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName(sheetName);
-  if (!sheet) {
-    sheet = ss.insertSheet(sheetName);
-    sheet.appendRow(VISIT_HEADERS);
-  } else if (sheet.getLastRow() === 0) {
-    sheet.appendRow(VISIT_HEADERS);
-  }
-  return sheet;
-}
-
-function saveVisitRecord(sheetName, record) {
-  const sheet = getOrCreateVisitSheet(sheetName);
-  sheet.appendRow(VISIT_HEADERS.map(function(h) {
-    return record[h] !== undefined && record[h] !== null ? record[h] : '';
-  }));
-}
-
-function getVisitRecords(sheetName) {
-  const sheet = getOrCreateVisitSheet(sheetName);
-  const data = sheet.getDataRange().getValues();
-  if (data.length < 2) return [];
-
-  const headers = data[0].map(function(h) { return String(h).trim(); });
-  return data.slice(1)
-    .filter(function(row) { return row.some(function(v) { return v !== '' && v !== null; }); })
-    .map(function(row) {
-      const obj = {};
-      headers.forEach(function(h, i) {
-        obj[h] = row[i] !== null && row[i] !== undefined ? row[i] : '';
-      });
-      return obj;
-    });
 }
 
 function output(data) {
